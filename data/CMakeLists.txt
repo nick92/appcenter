@@ -1,4 +1,5 @@
 include (Translations)
+#configure_file(application.css.in ${CMAKE_CURRENT_BINARY_DIR}/application.css)
 configure_file(${DESKTOP_FILE}.in.in ${CMAKE_CURRENT_BINARY_DIR}/${DESKTOP_FILE}.in)
 configure_file(${CMAKE_PROJECT_NAME}-daemon.desktop.in ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_PROJECT_NAME}-daemon.desktop)
 configure_file_translation(${CMAKE_CURRENT_BINARY_DIR}/${DESKTOP_FILE}.in ${CMAKE_CURRENT_BINARY_DIR}/${DESKTOP_FILE} ${CMAKE_SOURCE_DIR}/po/)
@@ -8,5 +9,10 @@ configure_file_translation(${CMAKE_CURRENT_SOURCE_DIR}/${CMAKE_PROJECT_NAME}.app
 install (FILES ${CMAKE_CURRENT_BINARY_DIR}/${DESKTOP_FILE} DESTINATION share/applications)
 install (FILES ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_PROJECT_NAME}-daemon.desktop DESTINATION share/applications)
 install (FILES ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_PROJECT_NAME}.appdata.xml DESTINATION share/metainfo)
-install (FILES ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_PROJECT_NAME}.service DESTINATION share/dbus-1/services)
+#install (FILES ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_PROJECT_NAME}.service DESTINATION share/dbus-1/services)
 install (FILES ${BLACKLIST} DESTINATION ${CONFIGDIR})
+
+add_subdirectory(icons)
+
+include (GResource)
+glib_compile_resources (GLIB_RESOURCES_CSS SOURCE ${CMAKE_PROJECT_NAME}.gresource.xml)

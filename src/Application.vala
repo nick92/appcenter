@@ -188,7 +188,7 @@ public class AppCenter.App : Granite.Application {
         if (silent) {
             DBusServer.init ();
             try {
-                registration_id = connection.register_object ("/io/elementary/appcenter", DBusServer.get_default ());
+                registration_id = connection.register_object (Build.URI_ROOT, DBusServer.get_default ());
             } catch (Error e) {
                 warning (e.message);
             }
