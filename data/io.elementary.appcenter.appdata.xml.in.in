@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- Copyright 2015 elementary, LLC <contact@elementary.io> -->
 <component type="desktop-application">
-    <id>io.elementary.appcenter.desktop</id>
+    <id>@DESKTOP_FILE@</id>
     <metadata_license>CC0-1.0</metadata_license>
     <project_group>elementary</project_group>
     <project_license>GPL-3.0+</project_license>
-    <name>AppCenter</name>
-    <summary>Browse and manage apps</summary>
+    <name>@APP_NAME@</name>
+    <summary>@RELEASE_NAME@</summary>
     <description>
         <p>
         An app store for indie and open source developers. Browse by categories or
@@ -128,8 +128,8 @@
         <release version="0.1.0" date="2016-08-15"/>
     </releases>
     <provides>
-        <binary>io.elementary.appcenter</binary>
-        <dbus type="user">io.elementary.AppCenter</dbus>
+        <binary>@EXEC_NAME@</binary>
+        <dbus type="user">@PROJECT_NAME@</dbus>
     </provides>
     <screenshots>
         <screenshot type="default">
