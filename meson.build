@@ -17,13 +17,14 @@ conf.set('BINDIR', get_option('bindir'))
 conf.set('BLACKLIST', 'appcenter.blacklist')
 conf.set('CONFIGDIR', join_paths(get_option('sysconfdir'), meson.project_name()))
 conf.set('DATADIR', get_option('datadir'))
-conf.set('DESKTOP_FILE', meson.project_version() + '.desktop')
+conf.set('DESKTOP_FILE', meson.project_name() + '.desktop')
 conf.set('DESKTOP_ICON', 'system-software-install')
 conf.set('EXEC_NAME', meson.project_name())
 conf.set('GETTEXT_PACKAGE', meson.project_name())
 conf.set('PKGDATADIR', join_paths(get_option('datadir'), meson.project_name()))
 conf.set('PROJECT_NAME', meson.project_name())
 conf.set('RELEASE_NAME', 'Browse and manage apps')
+conf.set('URI_ROOT', '/io/elementary/appcenter')
 conf.set('VERSION', meson.project_version())
 conf.set('VERSION_INFO', 'Alpha')
 
@@ -33,6 +34,7 @@ config_vala = configure_file (
     configuration: conf
 )
 
+gnome = import('gnome')
 i18n = import('i18n')
 
 add_global_arguments('-DGETTEXT_PACKAGE="' + meson.project_name() + '"', language:'c')

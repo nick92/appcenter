@@ -101,7 +101,7 @@
 }
 
 .category.audio {
-    background-image: -gtk-scaled(url("resource:///io/elementary/appcenter/backgrounds/audio.svg"), url("resource:///io/elementary/appcenter/backgrounds/audio@2x.svg")),
+    background-image: -gtk-scaled(url("resource://@URI_ROOT@/backgrounds/audio.svg"), url("resource://@URI_ROOT@/backgrounds/audio@2x.svg")),
                       linear-gradient(to bottom,
                               #FC8F36,
                               #EF6522
@@ -194,13 +194,13 @@
 
 .category.graphics label,
 .category.graphics .label {
-    border-image: -gtk-scaled(url("resource:///io/elementary/appcenter/backgrounds/graphics.svg"),url("resource:///io/elementary/appcenter/backgrounds/graphics@2x.svg")) 10 10 10 10 / 10px 10px 10px 10px repeat;
+    border-image: -gtk-scaled(url("resource://@URI_ROOT@/backgrounds/graphics.svg"),url("resource://@URI_ROOT@/backgrounds/graphics@2x.svg")) 10 10 10 10 / 10px 10px 10px 10px repeat;
     padding: 12px;
 }
 
 .category.graphics label:dir(rtl),
 .category.graphics .label:dir(rtl) {
-    border-image: -gtk-scaled(url("resource:///io/elementary/appcenter/backgrounds/graphics-rtl.svg"),url("resource:///io/elementary/appcenter/backgrounds/graphics-rtl@2x.svg")) 10 10 10 10 / 10px 10px 10px 10px repeat;
+    border-image: -gtk-scaled(url("resource://@URI_ROOT@/backgrounds/graphics-rtl.svg"),url("resource://@URI_ROOT@/backgrounds/graphics-rtl@2x.svg")) 10 10 10 10 / 10px 10px 10px 10px repeat;
 }
 
 .category.games {
@@ -256,7 +256,7 @@
 }
 
 .category.science {
-    background-image: url("resource:///io/elementary/appcenter/backgrounds/science.svg"),
+    background-image: url("resource://@URI_ROOT@/backgrounds/science.svg"),
                       linear-gradient(to bottom,
                               #374044,
                               #374044

@@ -1,3 +1,29 @@
+install_data(
+    'appcenter.blacklist',
+    install_dir: join_paths(get_option('sysconfdir'), 'appcenter')
+)
+
+css_in = configure_file (
+    input: 'application.css.in',
+    output: 'application.css',
+    install: false,
+    configuration: conf
+)
+
+gresource_in = configure_file (
+    input: meson.project_name() + '.gresource.xml.in',
+    output: meson.project_name() + '.gresource.xml',
+    install: false,
+    configuration: conf
+)
+
+asresources = gnome.compile_resources(
+    'as-resources', gresource_in,
+    source_dir: 'data',
+    c_name: 'as',
+    dependencies: css_in
+)
+
 configure_file (
     input: meson.project_name() + '.service.in',
     output: meson.project_name() + '.service',
@@ -59,3 +85,5 @@ test (
     find_program('appstreamcli'),
     args: ['validate', join_paths(meson.current_build_dir (), meson.project_name() + '.appdata.xml')]
 )
+
+subdir('icons')
