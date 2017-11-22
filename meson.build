@@ -11,16 +11,21 @@ project('io.elementary.appcenter', 'vala', 'c',
 
 meson.add_install_script('meson/post_install.py')
 
+BLACKLIST = 'appcenter.blacklist'
+DESKTOP_FILE = meson.project_name() + '.desktop'
+EXEC_NAME = meson.project_name()
+GETTEXT_PACKAGE = meson.project_name()
+
 conf = configuration_data()
 conf.set('APP_NAME', 'AppCenter')
 conf.set('BINDIR', get_option('bindir'))
-conf.set('BLACKLIST', 'appcenter.blacklist')
+conf.set('BLACKLIST', BLACKLIST)
 conf.set('CONFIGDIR', join_paths(get_option('sysconfdir'), meson.project_name()))
 conf.set('DATADIR', get_option('datadir'))
-conf.set('DESKTOP_FILE', meson.project_name() + '.desktop')
+conf.set('DESKTOP_FILE', DESKTOP_FILE)
 conf.set('DESKTOP_ICON', 'system-software-install')
-conf.set('EXEC_NAME', meson.project_name())
-conf.set('GETTEXT_PACKAGE', meson.project_name())
+conf.set('EXEC_NAME', EXEC_NAME)
+conf.set('GETTEXT_PACKAGE', GETTEXT_PACKAGE)
 conf.set('PKGDATADIR', join_paths(get_option('datadir'), meson.project_name()))
 conf.set('PROJECT_NAME', meson.project_name())
 conf.set('RELEASE_NAME', 'Browse and manage apps')
@@ -37,7 +42,7 @@ config_vala = configure_file (
 gnome = import('gnome')
 i18n = import('i18n')
 
-add_global_arguments('-DGETTEXT_PACKAGE="' + meson.project_name() + '"', language:'c')
+add_global_arguments('-DGETTEXT_PACKAGE="' + GETTEXT_PACKAGE + '"', language:'c')
 
 add_global_arguments('-DI_KNOW_THE_PACKAGEKIT_GLIB2_API_IS_SUBJECT_TO_CHANGE', language:'c')
 

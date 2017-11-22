@@ -44,7 +44,7 @@ appcenter_files = files(
 )
 
 executable(
-    meson.project_name(),
+    EXEC_NAME,
     config_vala,
     appcenter_files,
     dependencies: dependencies,

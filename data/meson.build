@@ -1,5 +1,5 @@
 install_data(
-    'appcenter.blacklist',
+    BLACKLIST,
     install_dir: join_paths(get_option('sysconfdir'), 'appcenter')
 )
 
@@ -33,8 +33,8 @@ configure_file (
 )
 
 desktop_in = configure_file (
-    input: meson.project_name() + '.desktop.in.in',
-    output: meson.project_name() + '.desktop.in',
+    input: DESKTOP_FILE + '.in.in',
+    output: DESKTOP_FILE + '.in',
     install: true,
     install_dir: join_paths(get_option('datadir'), 'applications'),
     configuration: conf
@@ -58,7 +58,7 @@ appdata_in = configure_file (
 i18n.merge_file (
     'desktop',
     input: desktop_in,
-    output: meson.project_name() + '.desktop',
+    output: DESKTOP_FILE,
     install: true,
     install_dir: join_paths(get_option('datadir'), 'applications'),
     po_dir: join_paths(meson.source_root (), 'po', 'extra'),
@@ -77,7 +77,7 @@ i18n.merge_file (
 test (
     'Validate desktop file',
     find_program('desktop-file-validate'),
-    args: join_paths(meson.current_build_dir (), meson.project_name() + '.desktop')
+    args: join_paths(meson.current_build_dir (), DESKTOP_FILE)
 )
 
 test (
