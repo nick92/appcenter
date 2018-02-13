@@ -33,4 +33,4 @@ install:
   - npm install @elementaryos/houston
 
 script:
-  - houston ci --distribution $DIST
+  - houston ci --distribution $DIST --name-domain io.elementary.*
