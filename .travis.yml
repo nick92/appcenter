@@ -33,4 +33,4 @@ install:
   - npm install @elementaryos/houston
 
 script:
-  - houston ci --distribution $DIST --name-domain io.elementary.appcenter
+  - houston ci --distribution $DIST --name-domain io.elementary.appcenter --type system-app
