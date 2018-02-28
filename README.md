@@ -1,6 +1,6 @@
 # AppHive
 
-**This is a beta application and currently has many bugs**
+**This application is currently in beta and so contains many bugs**
 
 A universal application manager for *buntu systems. Based on [elementary AppCenter](https://github.com/elementary/appcenter)
 
