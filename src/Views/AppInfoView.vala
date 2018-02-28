@@ -43,13 +43,13 @@ namespace AppCenter.Views {
         construct {
             image.margin_top = 12;
             image.margin_start = 6;
-            image.pixel_size = 128;
+            image.pixel_size = 60;
 
-            action_button.suggested_action = true;
+            //action_button.suggested_action = true;
 
             var uninstall_button_context = uninstall_button.get_style_context ();
             uninstall_button_context.add_class (Gtk.STYLE_CLASS_DESTRUCTIVE_ACTION);
-            uninstall_button_context.add_class ("h3");
+            uninstall_button_context.add_class ("h4");
 
             var package_component = package.component;
 
@@ -86,7 +86,7 @@ namespace AppCenter.Views {
             package_name = new Gtk.Label (null);
             package_name.margin_top = 12;
             package_name.xalign = 0;
-            package_name.get_style_context ().add_class ("h1");
+            package_name.get_style_context ().add_class ("h2");
             package_name.valign = Gtk.Align.CENTER;
 
             app_version = new Gtk.Label (null);
@@ -101,7 +101,7 @@ namespace AppCenter.Views {
             package_author.xalign = 0;
             package_author.valign = Gtk.Align.START;
             package_author.get_style_context ().add_class (Gtk.STYLE_CLASS_DIM_LABEL);
-            package_author.get_style_context ().add_class ("h2");
+            package_author.get_style_context ().add_class ("h3");
 
             package_summary = new Gtk.Label (package.get_summary ());
             package_summary.xalign = 0;
@@ -305,7 +305,7 @@ namespace AppCenter.Views {
 
             add (overlay);
 
-            open_button.get_style_context ().add_class ("h3");
+            open_button.get_style_context ().add_class ("h4");
 
             if (package.is_shareable) {
                 var body = _("Check out %s on AppCenter:").printf (package.get_name ());
@@ -362,7 +362,7 @@ namespace AppCenter.Views {
 
         private async void load_extensions () {
             package.component.get_addons ().@foreach ((extension) => {
-                var row = new Widgets.PackageRow.list (new AppCenterCore.Package (extension), null, null, false);
+                var row = new Widgets.PackageRow.list (new AppCenterCore.Package.addComponent (extension), null, null, false);
                 if (extension_box != null) {
                     extension_box.add (row);
                 }

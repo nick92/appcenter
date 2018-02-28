@@ -26,7 +26,7 @@ public class AppCenter.Views.InstalledView : View {
     construct {
         app_list_view = new AppListUpdateView ();
         app_list_view.show_app.connect ((package) => {
-            subview_entered (C_("view", "Updates"), false, "");
+            subview_entered (C_("view", "Installed"), false, "");
             show_package (package);
         });
 

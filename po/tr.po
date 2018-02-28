@@ -3,16 +3,16 @@ msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2018-01-09 18:51+0100\n"
-"PO-Revision-Date: 2018-02-13 00:08+0000\n"
-"Last-Translator: Furkan Ege Öztürk <furkanegeozturk@galatasaray.net>\n"
-"Language-Team: Turkish "
-"<https://weblate.elementary.io/projects/appcenter/appcenter/tr/>\n"
+"PO-Revision-Date: 2017-05-04 03:35+0000\n"
+"Last-Translator: Seyit Ali Doğan <seyit822@yandex.com>\n"
+"Language-Team: Turkish <https://l10n.elementary.io/projects/appcenter/"
+"appcenter/tr/>\n"
 "Language: tr\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=2; plural=n > 1;\n"
-"X-Generator: Weblate 2.18\n"
+"Plural-Forms: nplurals=2; plural=n != 1;\n"
+"X-Generator: Weblate 2.13-dev\n"
 "X-Launchpad-Export-Date: 2017-03-14 06:26+0000\n"
 
 #: ../src/Application.vala:39
@@ -33,27 +33,25 @@ msgstr "%s başarı ile yüklendi"
 
 #: ../src/Application.vala:254
 msgid "Close"
-msgstr "Kapat"
+msgstr ""
 
 #: ../src/Application.vala:256
 msgid "There Was An Error Installing %s."
-msgstr "%s kurulurken bir hata oluştu."
+msgstr ""
 
 #: ../src/Application.vala:286
 msgid "Details"
-msgstr "Ayrıntılar"
+msgstr ""
 
 #: ../src/Application.vala:290
 msgid "Failed to Fetch Updates"
-msgstr "Güncelleştirmeler Alınamadı"
+msgstr ""
 
 #: ../src/Application.vala:291
 msgid ""
 "This may have been caused by external, manually added software repositories "
 "or a corrupted sources file."
 msgstr ""
-"Bunun nedeni elle eklenen harici dosyalar, yazılım depoları veya bozuk bir "
-"kaynak dosyası olabilir."
 
 #: ../src/Application.vala:297
 msgid "Ignore"

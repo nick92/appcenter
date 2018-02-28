@@ -41,9 +41,11 @@ public class AppCenterCore.Client : Object {
     public bool updating_cache { public get; private set; default = false; }
 
     public AppCenterCore.Package os_updates { public get; private set; }
+    public AppCenterCore.Package snap_packages { public get; private set; }
     public Gee.TreeSet<AppCenterCore.Package> driver_list { get; construct; }
 
     private Gee.HashMap<string, AppCenterCore.Package> package_list;
+    private Gee.HashMap<string, AppCenterCore.SnapPackage> snap_list;
     private AppStream.Pool appstream_pool;
     private GLib.Cancellable cancellable;
 
@@ -58,6 +60,7 @@ public class AppCenterCore.Client : Object {
     private const int PACKAGEKIT_ACTIVITY_TIMEOUT_MS = 2000;
 
     private SuspendControl sc;
+    private SnapClient snapdClient;
 
     private Client () {
 
@@ -68,11 +71,15 @@ public class AppCenterCore.Client : Object {
     }
 
     construct {
+        snapdClient = SnapClient.get_default ();
         package_list = new Gee.HashMap<string, AppCenterCore.Package> (null, null);
+        snap_list = new Gee.HashMap<string, AppCenterCore.SnapPackage> (null, null);
         driver_list = new Gee.TreeSet<AppCenterCore.Package> ();
         cancellable = new GLib.Cancellable ();
 
         sc = new SuspendControl ();
+
+        //cancellable = new GLib.Cancellable ();
 
         appstream_pool = new AppStream.Pool ();
         // We don't want to show installed desktop files here
@@ -87,10 +94,13 @@ public class AppCenterCore.Client : Object {
                     return;
                 }
 
-                var package = new AppCenterCore.Package (comp);
+                var package = new AppCenterCore.Package.addComponent(comp);
+                //package.component = comp;
+
                 foreach (var pkg_name in comp.get_pkgnames ()) {
                     package_list[pkg_name] = package;
                 }
+
             });
         } catch (Error e) {
             critical (e.message);
@@ -106,7 +116,7 @@ public class AppCenterCore.Client : Object {
         os_updates_component.summary = _("Updates to system components");
         os_updates_component.add_icon (icon);
 
-        os_updates = new AppCenterCore.Package (os_updates_component);
+        os_updates = new AppCenterCore.Package.addComponent (os_updates_component);
 
         var control = new Pk.Control ();
         control.updates_changed.connect (updates_changed_callback);
@@ -147,7 +157,7 @@ public class AppCenterCore.Client : Object {
 
             appstream_pool.add_component (component);
 
-            var package = new AppCenterCore.Package (component);
+            var package = new AppCenterCore.Package.addComponent (component);
             package_list[id] = package;
 
             return package;
@@ -306,7 +316,7 @@ public class AppCenterCore.Client : Object {
                 icon.set_kind (AppStream.IconKind.STOCK);
                 driver_component.add_icon (icon);
 
-                var package = new Package (driver_component);
+                var package = new AppCenterCore.Package.addComponent (driver_component);
                 var pk_package = package.find_package ();
                 if (pk_package != null && pk_package.get_info () == Pk.Info.INSTALLED) {
                     package.installed_packages.add (pk_package);
@@ -337,6 +347,15 @@ public class AppCenterCore.Client : Object {
             }
         }
 
+        //get installed snaps
+        snapdClient.getInstalledPackages ().foreach ((snap) => {
+            var package = convert_snap_to_component(snap);
+            if (package != null) {
+                //populate_package (package, convert_to_package(snap));
+                packages.add (package);
+            }
+        });
+
         return packages;
     }
 
@@ -351,6 +370,15 @@ public class AppCenterCore.Client : Object {
             }
         }
 
+        //get installed snaps
+        snapdClient.getInstalledPackages ().foreach ((snap) => {
+            var package = convert_snap_to_component(snap);
+            if (package != null) {
+                //populate_package (package, convert_to_package(snap));
+                packages.add (package);
+            }
+        });
+
         return packages;
     }
 
@@ -361,6 +389,7 @@ public class AppCenterCore.Client : Object {
     }
 
     public Gee.Collection<AppCenterCore.Package> get_applications_for_category (AppStream.Category category) {
+
         unowned GLib.GenericArray<AppStream.Component> components = category.get_components ();
         if (components.length == 0) {
             var category_array = new GLib.GenericArray<AppStream.Category> ();
@@ -377,15 +406,31 @@ public class AppCenterCore.Client : Object {
             }
         });
 
+        snapdClient.getPackagesForSection(category).foreach ((snap) => {
+            var package = convert_snap_to_component(snap);
+            if (package != null) {
+                apps.add (package);
+            }
+        });
+
         return apps;
     }
 
     public Gee.Collection<AppCenterCore.Package> search_applications (string query, AppStream.Category? category) {
         var apps = new Gee.TreeSet<AppCenterCore.Package> ();
+        var snapps = new Gee.TreeSet<AppCenterCore.SnapPackage> ();
+        GLib.GenericArray<weak Snapd.Snap> snaps = snapdClient.getPackageByName(query);
         GLib.GenericArray<weak AppStream.Component> comps = appstream_pool.search (query);
+
         if (category == null) {
             comps.foreach ((comp) => {
                 var package = get_package_for_component_id (comp.get_id ());
+                if (package != null) {
+                    apps.add (package);
+                }
+            });
+            snaps.foreach ((snap) => {
+                var package = convert_snap_to_component (snap);
                 if (package != null) {
                     apps.add (package);
                 }
@@ -403,9 +448,25 @@ public class AppCenterCore.Client : Object {
         return apps;
     }
 
+    public Gee.Collection<AppCenterCore.SnapPackage> search_snaps (string query, AppStream.Category? category) {
+        var snapps = new Gee.TreeSet<AppCenterCore.SnapPackage> ();
+        GLib.GenericArray<weak Snapd.Snap> snaps = snapdClient.getPackageByName(query);
+
+        if (category == null) {
+            snaps.foreach ((comp) => {
+                var snap = new AppCenterCore.SnapPackage (comp);
+                //var snap = new AppCenterCore.Package.convertToComponent(comp);
+                if (snap != null) {
+                    snapps.add (snap);
+                }
+            });
+        }
+
+        return snapps;
+    }
+
     public Pk.Package? get_app_package (string application, Pk.Bitfield additional_filters = 0) throws GLib.Error {
         task_count++;
-
         Pk.Package? package = null;
         var filter = Pk.Bitfield.from_enums (Pk.Filter.NEWEST);
         filter |= additional_filters;
@@ -425,7 +486,7 @@ public class AppCenterCore.Client : Object {
             details.get_details_array ().foreach ((details) => {
                 package.license = details.license;
                 package.description = details.description;
-                package.summary = details.summary;
+                //package.summary = details.summary;
                 package.group = details.group;
                 package.size = details.size;
                 package.url = details.url;
@@ -650,6 +711,19 @@ public class AppCenterCore.Client : Object {
                 installed.add (pk_package);
             });
 
+            GLib.GenericArray<weak Snapd.Snap> snapResult = yield snapdClient.getInstalledPackagesAsync ();
+
+            GLib.GenericArray<weak Snapd.Snap> snapResultUpdate = yield snapdClient.getRefreshablePackages();
+
+            snapResultUpdate.foreach ((snap) => {
+                warning(snap.name);
+                //installed.add (convert_to_package(snap));
+            });
+
+            snapResult.foreach ((snap) => {
+                installed.add (convert_to_package(snap));
+            });
+
         } catch (Error e) {
             critical (e.message);
         }
@@ -668,6 +742,12 @@ public class AppCenterCore.Client : Object {
             Pk.Results results = client.get_packages_sync (filter, null, (prog, type) => {});
             results.get_package_array ().foreach ((pk_package) => {
                 installed.add (pk_package);
+            });
+
+            GLib.GenericArray<weak Snapd.Snap> snapResult = snapdClient.getInstalledPackages ();
+
+            snapResult.foreach ((snap) => {
+                installed.add (convert_to_package(snap));
             });
 
         } catch (Error e) {
@@ -711,6 +791,53 @@ public class AppCenterCore.Client : Object {
         }
 
         return packages;
+    }
+
+    public Pk.Package convert_to_package (Snapd.Snap snap)
+    {
+        var package = new Pk.Package ();
+        package.license = snap.get_license ();
+        package.summary = snap.get_summary ();
+        //package.set_id(snap.get_id ());
+        package.size = snap.get_installed_size ();
+
+        package.set_info(Pk.Info.INSTALLED);
+
+        return package;
+    }
+
+    public AppCenterCore.Package convert_snap_to_component (Snapd.Snap snap)
+    {
+        var icon = new AppStream.Icon ();
+        icon.set_name (snap.get_name ());
+        icon.set_url (snap.get_icon ());
+        icon.set_kind (AppStream.IconKind.REMOTE);
+
+        var snap_component = new AppStream.Component ();
+        snap_component.id = "%s%s".printf (snap.get_id (), Package.SNAP_ID_SUFFIX);
+        snap_component.name = _(snap.get_title ());
+        snap_component.developer_name = _(snap.get_developer ());
+        snap_component.summary = _(snap.get_summary ());
+        snap_component.description = _(snap.get_description ());
+        snap_component.project_license = _(snap.get_license ());
+
+        snap.get_screenshots ().foreach ((screens) => {
+            var image = new AppStream.Image ();
+            var snap_screenshot = new AppStream.Screenshot ();
+            image.set_url (screens.get_url ());
+            image.set_kind (AppStream.ImageKind.SOURCE);
+
+            snap_screenshot.add_image(image);
+            snap_component.add_screenshot (snap_screenshot);
+        });
+
+        snap_component.add_icon (icon);
+
+        var package = new AppCenterCore.Package.addComponent (snap_component);
+        package.latest_version = snap.version;
+        package.set_status(snap.status);
+
+        return package;
     }
 
     private static GLib.Once<Client> instance;

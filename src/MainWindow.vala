@@ -42,11 +42,14 @@ public class AppCenter.MainWindow : Gtk.ApplicationWindow {
     private Gtk.Grid network_view;
 
     private int homepage_view_id;
+    private int category_view_id;
     private int installed_view_id;
 
     private const int VALID_QUERY_LENGTH = 3;
 
     public static Views.InstalledView installed_view { get; private set; }
+
+    public static Views.CategoryView category_view { get; private set; }
 
     public signal void homepage_loaded ();
 
@@ -104,6 +107,7 @@ public class AppCenter.MainWindow : Gtk.ApplicationWindow {
         installed_view.get_apps.begin ();
 
         homepage.subview_entered.connect (view_opened);
+        category_view.subview_entered.connect (view_opened);
         installed_view.subview_entered.connect (view_opened);
         search_view.subview_entered.connect (view_opened);
 
@@ -111,7 +115,17 @@ public class AppCenter.MainWindow : Gtk.ApplicationWindow {
 
         network_alert_view.action_activated.connect (() => {
             try {
-                AppInfo.launch_default_for_uri ("settings://network", null);
+                string[] args = {
+                  "gnome-control-center", "network"
+                };
+                Process.spawn_async (
+                    null,
+                    args,
+                    null,
+                    SpawnFlags.SEARCH_PATH,
+                    null,
+                    null
+                );
             } catch (Error e) {
                 warning (e.message);
             }
@@ -139,7 +153,8 @@ public class AppCenter.MainWindow : Gtk.ApplicationWindow {
         view_mode = new Granite.Widgets.ModeButton ();
         view_mode.margin = 1;
         homepage_view_id = view_mode.append_text (_("Home"));
-        installed_view_id = view_mode.append_text (C_("view", "Updates"));
+        category_view_id = view_mode.append_text (C_("view", "Categories"));
+        installed_view_id = view_mode.append_text (C_("view", "Installed"));
 
         view_mode_revealer = new Gtk.Revealer ();
         view_mode_revealer.reveal_child = true;
@@ -170,6 +185,7 @@ public class AppCenter.MainWindow : Gtk.ApplicationWindow {
         set_titlebar (headerbar);
 
         homepage = new Homepage (this);
+        category_view = new Views.CategoryView ();
         installed_view = new Views.InstalledView ();
         search_view = new Views.SearchView ();
 
@@ -177,7 +193,7 @@ public class AppCenter.MainWindow : Gtk.ApplicationWindow {
                                                             _("Connect to the Internet to install or update apps."),
                                                             "network-error");
         network_alert_view.get_style_context ().remove_class (Gtk.STYLE_CLASS_VIEW);
-        network_alert_view.show_action (_("Network Settings…"));
+        //network_alert_view.show_action (_("Network Settings…"));
 
         network_view = new Gtk.Grid ();
         network_view.margin = 24;
@@ -186,6 +202,7 @@ public class AppCenter.MainWindow : Gtk.ApplicationWindow {
         stack = new Gtk.Stack ();
         stack.transition_type = Gtk.StackTransitionType.SLIDE_LEFT_RIGHT;
         stack.add (homepage);
+        stack.add (category_view);
         stack.add (installed_view);
         stack.add (search_view);
         stack.add (network_view);
@@ -327,6 +344,9 @@ public class AppCenter.MainWindow : Gtk.ApplicationWindow {
                 if (view_mode.selected == homepage_view_id) {
                     stack.visible_child = homepage;
                     search_entry.sensitive = !homepage.viewing_package;
+                } else if (view_mode.selected == category_view_id) {
+                    stack.visible_child = category_view;
+                    search_entry.sensitive = false;
                 } else if (view_mode.selected == installed_view_id) {
                     stack.visible_child = installed_view;
                     search_entry.sensitive = false;

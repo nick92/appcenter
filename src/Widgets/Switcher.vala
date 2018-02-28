@@ -29,7 +29,7 @@ namespace AppCenter.Widgets {
         private Gtk.Stack stack;
         private Gee.HashMap<Gtk.Widget, Gtk.ToggleButton> buttons;
         public signal void on_stack_changed ();
-        
+
         public Switcher () {
             column_spacing = 3;
             can_focus = false;
@@ -48,7 +48,7 @@ namespace AppCenter.Widgets {
 
         private void add_child (Gtk.Widget widget) {
             var button = new Gtk.ToggleButton ();
-            button.image = new Gtk.Image.from_icon_name ("pager-checked-symbolic", Gtk.IconSize.MENU);
+            button.image = new Gtk.Image.from_icon_name ("mail-mark-unread-symbolic", Gtk.IconSize.MENU);
             button.get_style_context ().add_class (Gtk.STYLE_CLASS_FLAT);
             button.get_style_context ().add_class ("switcher");
             button.button_release_event.connect (() => {
@@ -69,14 +69,14 @@ namespace AppCenter.Widgets {
             // show all children after update
             show_all ();
         }
-        
+
         public override void show () {
             base.show ();
             if (buttons.size <= 1)
                 hide ();
         }
 
-        
+
         public override void show_all () {
             base.show_all ();
             if (buttons.size <= 1)

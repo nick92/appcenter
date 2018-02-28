@@ -1,28 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <gresources>
   <gresource prefix="/io/elementary/appcenter/icons">
-    <file alias="applications-accessibility-symbolic.svg" compressed="true" preprocess="xml-stripblanks">applications-accessibility-symbolic.svg</file>
-    <file alias="applications-audio-symbolic.svg" compressed="true" preprocess="xml-stripblanks">applications-audio-symbolic.svg</file>
-    <file alias="applications-games-symbolic.svg" compressed="true" preprocess="xml-stripblanks">applications-games-symbolic.svg</file>
-    <file alias="applications-office-symbolic.svg" compressed="true" preprocess="xml-stripblanks">applications-office-symbolic.svg</file>
-    <file alias="applications-video-rtl-symbolic.svg" compressed="true" preprocess="xml-stripblanks">applications-video-rtl-symbolic.svg</file>
-    <file alias="applications-video-symbolic-rtl.svg" compressed="true" preprocess="xml-stripblanks">applications-video-rtl-symbolic.svg</file>
-    <file alias="applications-video-symbolic.svg" compressed="true" preprocess="xml-stripblanks">applications-video-symbolic.svg</file>
-    <file alias="online-account-facebook.svg" compressed="true" preprocess="xml-stripblanks">online-account-facebook.svg</file>
-    <file alias="online-account-google-plus.svg" compressed="true" preprocess="xml-stripblanks">online-account-google-plus.svg</file>
-    <file alias="online-account-reddit.svg" compressed="true" preprocess="xml-stripblanks">online-account-reddit.svg</file>
-    <file alias="online-account-tumblr.svg" compressed="true" preprocess="xml-stripblanks">online-account-tumblr.svg</file>
-    <file alias="online-account-twitter.svg" compressed="true" preprocess="xml-stripblanks">online-account-twitter.svg</file>
-    <file alias="online-account-telegram.svg" compressed="true" preprocess="xml-stripblanks">online-account-telegram.svg</file>
     <file alias="text-x-copying-symbolic.svg" compressed="true" preprocess="xml-stripblanks">text-x-copying-symbolic.svg</file>
-  </gresource>
-  <gresource prefix="/io/elementary/appcenter/backgrounds">
-    <file alias="audio.svg" compressed="true" preprocess="xml-stripblanks">audio.svg</file>
-    <file alias="audio@2x.svg" compressed="true" preprocess="xml-stripblanks">audio@2x.svg</file>
-    <file alias="graphics.svg" compressed="true" preprocess="xml-stripblanks">graphics.svg</file>
-    <file alias="graphics-rtl.svg" compressed="true" preprocess="xml-stripblanks">graphics-rtl.svg</file>
-    <file alias="graphics@2x.svg" compressed="true" preprocess="xml-stripblanks">graphics@2x.svg</file>
-    <file alias="graphics-rtl@2x.svg" compressed="true" preprocess="xml-stripblanks">graphics-rtl@2x.svg</file>
-    <file alias="science.svg" compressed="true" preprocess="xml-stripblanks">science.svg</file>
   </gresource>
 </gresources>

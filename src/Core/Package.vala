@@ -41,10 +41,12 @@ public class AppCenterCore.Package : Object {
     }
 
     public const string OS_UPDATES_ID = "xxx-os-updates";
+    public const string SNAP_ID_SUFFIX = ".snap";
     public const string LOCAL_ID_SUFFIX = ".appcenter-local";
     public const string DEFAULT_PRICE_DOLLARS = "1";
 
     public AppStream.Component component { get; construct; }
+    public Snapd.Snap snap { get; construct; }
     public ChangeInformation change_information { public get; private set; }
     public Gee.TreeSet<Pk.Package> installed_packages { public get; private set; }
     public GLib.Cancellable action_cancellable { public get; private set; }
@@ -58,11 +60,16 @@ public class AppCenterCore.Package : Object {
 
     public bool installed {
         get {
+
             if (!installed_packages.is_empty) {
                 return true;
             }
 
             if (component.get_id () == OS_UPDATES_ID) {
+                return true;
+            }
+
+            if (component.get_id () == SNAP_ID_SUFFIX) {
                 return true;
             }
 
@@ -78,29 +85,6 @@ public class AppCenterCore.Package : Object {
     public bool update_available {
         get {
             return state == State.UPDATE_AVAILABLE;
-        }
-    }
-
-    public bool should_nag_update {
-        get {
-            if (!update_available || !is_native || is_os_updates) {
-                return false;
-            }
-
-            if (get_payments_key () == null || get_suggested_amount () == "0") {
-                return false;
-            }
-
-            if (component.get_id () in AppCenter.Settings.get_default ().paid_apps) {
-                return false;
-            }
-
-            var newest_release = get_newest_release ();
-            if (newest_release != null && newest_release.get_urgency () == AppStream.UrgencyKind.CRITICAL) {
-                return false;
-            }
-
-            return true;
         }
     }
 
@@ -134,9 +118,15 @@ public class AppCenterCore.Package : Object {
         }
     }
 
+    public bool is_snap {
+        get {
+            return component.get_id ().has_suffix (SNAP_ID_SUFFIX);
+        }
+    }
+
     public bool is_shareable {
         get {
-            return !is_driver && !is_os_updates;
+            return false;
         }
     }
 
@@ -150,6 +140,7 @@ public class AppCenterCore.Package : Object {
                 default:
                     return false;
             }
+            return false;
         }
     }
 
@@ -211,12 +202,15 @@ public class AppCenterCore.Package : Object {
         installed_packages = new Gee.TreeSet<Pk.Package> ();
         change_information = new ChangeInformation ();
         change_information.status_changed.connect (() => info_changed (change_information.status));
-
         action_cancellable = new GLib.Cancellable ();
     }
 
-    public Package (AppStream.Component component) {
+    public Package.addComponent (AppStream.Component component) {
         Object (component: component);
+    }
+
+    public Package.convertToComponent (Snapd.Snap snap) {
+        Object (snap: snap);
     }
 
     public void update_state () {
@@ -228,6 +222,20 @@ public class AppCenterCore.Package : Object {
             }
         } else {
             state = State.NOT_INSTALLED;
+        }
+    }
+
+    public void set_status (Snapd.SnapStatus snapstatus) {
+        switch ( snapstatus ) {
+            case snapstatus.INSTALLED :
+                state = State.INSTALLED;
+                break;
+            case snapstatus.ACTIVE :
+                state = State.INSTALLED;
+                break;
+            default :
+                state = State.NOT_INSTALLED;
+                break;
         }
     }
 
@@ -289,17 +297,38 @@ public class AppCenterCore.Package : Object {
 
     private async bool perform_operation (State performing, State after_success, State after_fail) throws GLib.Error {
         var exit_status = Pk.Exit.UNKNOWN;
-        prepare_package_operation (performing);
-        try {
-            exit_status = yield perform_package_operation ();
-        } catch (GLib.Error e) {
-            warning ("Operation failed for package %s - %s", get_name (), e.message);
-            throw e;
-        } finally {
-            clean_up_package_operation (exit_status, after_success, after_fail);
-        }
 
-        return (exit_status == Pk.Exit.SUCCESS);
+        if(is_snap){
+            try {
+                prepare_package_operation (performing);
+                var boo = yield perform_snap_package_operation ();
+
+                if(boo)
+                    exit_status = Pk.Exit.SUCCESS;
+                else
+                    exit_status = Pk.Exit.FAILED;
+
+            } catch (GLib.Error e) {
+                warning ("Operation failed for package %s - %s", get_name (), e.message);
+                throw e;
+            } finally {
+                clean_up_package_operation (exit_status, after_success, after_fail);
+            }
+        }
+        else {
+            prepare_package_operation (performing);
+            try {
+                exit_status = yield perform_package_operation ();
+            } catch (GLib.Error e) {
+                warning ("Operation failed for package %s - %s", get_name (), e.message);
+                throw e;
+            } finally {
+                clean_up_package_operation (exit_status, after_success, after_fail);
+            }
+
+            return (exit_status == Pk.Exit.SUCCESS);
+        }
+        return false;
     }
 
     private void prepare_package_operation (State initial_state) {
@@ -308,6 +337,21 @@ public class AppCenterCore.Package : Object {
         action_cancellable.reset ();
         change_information.start ();
         state = initial_state;
+    }
+
+    private async bool perform_snap_package_operation () throws GLib.Error {
+        Snapd.ProgressCallback cb = change_information.SnapdProgressCallback;
+        var client = AppCenterCore.SnapClient.get_default ();
+        switch (state) {
+            case State.UPDATING:
+                return yield client.update_snap_package (this, cb, action_cancellable);
+            case State.INSTALLING:
+                return yield client.install_snap_package (this, cb, action_cancellable);
+            case State.REMOVING:
+                return yield client.remove_snap_package (this, cb, action_cancellable);
+            default:
+                return false;
+        }
     }
 
     private async Pk.Exit perform_package_operation () throws GLib.Error {
@@ -344,6 +388,7 @@ public class AppCenterCore.Package : Object {
         }
 
         name = component.get_name ();
+
         if (name == null) {
             var package = find_package ();
             if (package != null) {
@@ -360,6 +405,7 @@ public class AppCenterCore.Package : Object {
         }
 
         description = component.get_description ();
+
         if (description == null) {
             var package = find_package ();
             if (package != null) {
@@ -376,6 +422,7 @@ public class AppCenterCore.Package : Object {
         }
 
         summary = component.get_summary ();
+
         if (summary == null) {
             var package = find_package ();
             if (package != null) {
@@ -393,8 +440,8 @@ public class AppCenterCore.Package : Object {
     public GLib.Icon get_icon (uint size = 32) {
         GLib.Icon? icon = null;
         uint current_size = 0;
-
         bool is_stock = false;
+
         component.get_icons ().foreach ((_icon) => {
             if (is_stock) {
                 return;
@@ -418,14 +465,15 @@ public class AppCenterCore.Package : Object {
 
                     break;
                 case AppStream.IconKind.REMOTE:
-                    if (_icon.get_width () > current_size && current_size < size) {
+                    //if (_icon.get_width () > current_size && current_size < size) {
+                    if(_icon.get_url () != null) {
                         var file = File.new_for_uri (_icon.get_url ());
                         icon = new FileIcon (file);
                         current_size = _icon.get_width ();
                     }
 
                     break;
-            }
+                }
         });
 
         if (icon == null) {
@@ -567,7 +615,7 @@ public class AppCenterCore.Package : Object {
     }
 
     public Pk.Package? find_package () {
-        if (component.id == OS_UPDATES_ID || is_local) {
+        if (component.id == OS_UPDATES_ID || is_local || is_snap) {
             return null;
         }
 

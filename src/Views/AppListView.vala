@@ -76,7 +76,6 @@ namespace AppCenter.Views {
                     break;
                 }
             }
-
             on_list_changed ();
         }
 

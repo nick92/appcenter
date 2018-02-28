@@ -71,7 +71,7 @@ public class AppCenter.Widgets.HumbleButton : Gtk.Grid {
     public bool suggested_action {
         set {
             if (value) {
-                amount_button.get_style_context ().add_class ("h3");
+                //amount_button.get_style_context ().add_class ("h4");
                 amount_button.get_style_context ().add_class (Gtk.STYLE_CLASS_SUGGESTED_ACTION);
                 arrow_button.get_style_context ().add_class (Gtk.STYLE_CLASS_SUGGESTED_ACTION);
             }
@@ -168,7 +168,7 @@ public class AppCenter.Widgets.HumbleButton : Gtk.Grid {
 
             selection.closed.connect (() => {
                 arrow_button.active = false;
-            });            
+            });
         }
 
         selection.show_all ();

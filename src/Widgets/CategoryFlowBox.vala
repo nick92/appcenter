@@ -22,22 +22,39 @@ public class AppCenter.Widgets.CategoryFlowBox : Gtk.FlowBox {
     public CategoryFlowBox () {
         Object (activate_on_single_click: true,
                 homogeneous: true,
+                margin_start: 12,
+                margin_top: 24,
+                margin_end: 34,
+                margin_bottom: 34,
                 min_children_per_line: 2);
     }
 
     construct {
-        add (get_category (_("Audio"), "applications-audio-symbolic", {"Audio"}, "audio"));
+        /*add (get_category (_("Sound"), "applications-audio-symbolic", {"Audio"}, "audio"));
         add (get_category (_("Development"), "", {"IDE", "Development"}, "development"));
         add (get_category (_("Accessories"), "applications-accessories", {"Utility"}, "accessories"));
-        add (get_category (_("Office"), "applications-office-symbolic", {"Office", "Publishing"}, "office"));
-        add (get_category (_("System"), "applications-system", {"System"}, "system"));
+        add (get_category (_("Office"), "applications-office-symbolic", {"Office"}, "office"));
+        add (get_category (_("System Tools"), "applications-system", {"System"}, "system"));
         add (get_category (_("Video"), "applications-video-symbolic", {"Video"}, "video"));
         add (get_category (_("Graphics"), "", {"Graphics"}, "graphics"));
         add (get_category (_("Games"), "applications-games-symbolic", {"Game"}, "games"));
         add (get_category (_("Education"), "", {"Education"}, "education"));
         add (get_category (_("Internet"), "applications-internet", {"Network"}, "internet"));
-        add (get_category (_("Science & Engineering"), "", {"Science"}, "science"));
-        add (get_category (_("Universal Access"), "applications-accessibility-symbolic", {"Accessibility"}, "accessibility"));
+        add (get_category (_("Science"), "", {"Science"}, "science"));
+        add (get_category (_("Universal Access"), "applications-accessibility-symbolic", {"Accessibility"}, "accessibility"));*/
+
+        add (get_category (_("Sound"), "", {"Audio"}, "audio"));
+        add (get_category (_("Development"), "", {"IDE", "Development"}, "development"));
+        add (get_category (_("Accessories"), "", {"Utility"}, "accessories"));
+        add (get_category (_("Office"), "", {"Office"}, "office"));
+        add (get_category (_("System Tools"), "", {"System"}, "system"));
+        add (get_category (_("Video"), "", {"Video"}, "video"));
+        add (get_category (_("Graphics"), "", {"Graphics"}, "graphics"));
+        add (get_category (_("Games"), "", {"Game"}, "games"));
+        add (get_category (_("Education"), "", {"Education"}, "education"));
+        add (get_category (_("Internet"), "", {"Network"}, "internet"));
+        add (get_category (_("Science"), "", {"Science"}, "science"));
+        add (get_category (_("Universal Access"), "", {"Accessibility"}, "accessibility"));
     }
 
     private Widgets.CategoryItem get_category (string name, string icon, string[] groups, string style) {

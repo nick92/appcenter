@@ -42,7 +42,7 @@ namespace AppCenter {
         }
 
         construct {
-            var houston = AppCenterCore.Houston.get_default ();
+            //var houston = AppCenterCore.Houston.get_default ();
 
             var switcher = new Widgets.Switcher ();
             switcher.halign = Gtk.Align.CENTER;
@@ -78,7 +78,7 @@ namespace AppCenter {
             var recently_updated_revealer = new Gtk.Revealer ();
             recently_updated_revealer.add (recently_updated_grid );
 
-            var trending_label = new Gtk.Label (_("Trending"));
+            var trending_label = new Gtk.Label (_("Featured Snaps"));
             trending_label.get_style_context ().add_class ("h4");
             trending_label.xalign = 0;
             trending_label.margin_start = 10;
@@ -105,12 +105,13 @@ namespace AppCenter {
 
             var grid = new Gtk.Grid ();
             grid.margin = 12;
+
             grid.attach (newest_banner, 0, 0, 1, 1);
             grid.attach (switcher_revealer, 0, 1, 1, 1);
             grid.attach (trending_revealer, 0, 2, 1, 1);
             grid.attach (recently_updated_revealer, 0, 3, 1, 1);
-            grid.attach (categories_label, 0, 4, 1, 1);
-            grid.attach (category_flow, 0, 5, 1, 1);
+            //grid.attach (categories_label, 0, 4, 1, 1);
+            //grid.attach (category_flow, 0, 5, 1, 1);
 
             category_scrolled = new Gtk.ScrolledWindow (null, null);
             category_scrolled.add (grid);
@@ -122,7 +123,7 @@ namespace AppCenter {
                 newest_banner.add_package (local_package);
             }
 
-            houston.get_app_ids.begin ("/newest/project", (obj, res) => {
+            /*houston.get_app_ids.begin ("/newest/project", (obj, res) => {
                 var newest_ids = houston.get_app_ids.end (res);
                 new Thread<void*> ("update-banner", () => {
                     var packages_for_banner = new Gee.LinkedList<AppCenterCore.Package> ();
@@ -221,24 +222,38 @@ namespace AppCenter {
                     }
                     return null;
                 });
-            });
+            });*/
 
-            category_flow.child_activated.connect ((child) => {
-                var item = child as Widgets.CategoryItem;
-                if (item != null) {
-                    currently_viewed_category = item.app_category;
-                    show_app_list_for_category (item.app_category);
-                }
-            });
+            new Thread<void*> ("update-trending-carousel", () => {
+                var packages_for_carousel = new Gee.LinkedList<AppCenterCore.Package> ();
 
-            category_flow.set_sort_func ((child1, child2) => {
-                var item1 = child1 as Widgets.CategoryItem;
-                var item2 = child2 as Widgets.CategoryItem;
-                if (item1 != null && item2 != null) {
-                    return item1.app_category.name.collate (item2.app_category.name);
-                }
+                Idle.add (() => {
+                    var featured_snaps = AppCenterCore.SnapClient.get_default ().getFeaturedSnaps ();
 
-                return 0;
+                    featured_snaps.foreach ((snap) => {
+                        var package = AppCenterCore.Client.get_default ().convert_snap_to_component(snap);
+                        if(package != null){
+                            trending_carousel.add_package (package);
+                        }
+                    });
+
+                    /*foreach (var trending_package in packages_for_carousel) {
+                        trending_carousel.add_package (trending_package);
+                    }*/
+                    trending_revealer.reveal_child = true;
+                    return false;
+                });
+
+                /*if (!packages_for_carousel.is_empty) {
+                    Idle.add (() => {
+                        foreach (var trending_package in packages_for_carousel) {
+                            trending_carousel.add_package (trending_package);
+                        }
+                        trending_revealer.reveal_child = true;
+                        return false;
+                    });
+                }*/
+                return null;
             });
 
             recently_updated_carousel.package_activated.connect (show_package);

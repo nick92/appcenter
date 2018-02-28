@@ -1,8 +1,10 @@
 vala_precompile(VALA_C ${EXEC_NAME}
     Core/ChangeInformation.vala
     Core/Client.vala
+    Core/SnapClient.vala
     Core/Houston.vala
     Core/Package.vala
+    Core/SnapPackage.vala
     Core/Task.vala
     Core/UpdateManager.vala
     Core/ComponentValidator.vala
@@ -18,6 +20,7 @@ vala_precompile(VALA_C ${EXEC_NAME}
     Views/AppListUpdateView.vala
     Views/Homepage.vala
     Views/InstalledView.vala
+    Views/CategoryView.vala
     Views/SearchView.vala
     Views/View.vala
     Widgets/AppContainers/AbstractAppContainer.vala
@@ -41,16 +44,18 @@ vala_precompile(VALA_C ${EXEC_NAME}
     Widgets/ReleaseRow.vala
     Services/DBusInterfaces.vala
     Services/DBusServer.vala
+    Services/SearchProvider.vala
     ${CMAKE_CURRENT_BINARY_DIR}/config.vala
 PACKAGES
     appstream
     gtk+-3.0>=3.12
     gee-0.8
     granite>=0.5
-    packagekit-glib2
+	packagekit-glib2
     libsoup-2.4
     json-glib-1.0
     libxml-2.0
+	snapd-glib
     ${UNITY_PACKAGES}
 OPTIONS
   --vapidir=${CMAKE_SOURCE_DIR}/vapi

@@ -199,4 +199,34 @@ public class AppCenterCore.ChangeInformation : Object {
                 break;
         }
     }
+
+    public void SnapdProgressCallback (Snapd.Client client, Snapd.Change change, void* deprecated) {
+        warning(change.status);
+        switch (change.status) {
+            case "Doing":
+                current_status = Pk.Status.DOWNLOAD;
+                change.get_tasks().foreach ((task) => {
+                    current_progress = last_progress + int.parse(task.progress_total.to_string());
+                    last_progress = current_progress;
+                    this.progress = current_progress / progress_denom;
+                    progress_changed ();
+                });
+            break;
+            case "Abort":
+                can_cancel = true;
+            break;
+            case "Done":
+                status = Pk.Status.FINISHED;
+                status_changed ();
+            break;
+            case "Do":
+                status = Pk.Status.INSTALL;
+                status_changed ();
+            break;
+            case "Error":
+                status = Pk.Status.CANCEL;
+                status_changed ();
+            break;
+        }
+    }
 }

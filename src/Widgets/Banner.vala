@@ -22,12 +22,12 @@ const string BANNER_STYLE_CSS = """
     @define-color banner_bg_color %s;
     @define-color banner_fg_color %s;
 
-    .banner { 
+    .banner {
         transition: all %ums ease-in-out;
     }
 """;
 
-const string DEFAULT_BANNER_COLOR_PRIMARY = "#68758e";
+const string DEFAULT_BANNER_COLOR_PRIMARY = "#10A7B6";
 const string DEFAULT_BANNER_COLOR_PRIMARY_TEXT = "white";
 const int MILLISECONDS_BETWEEN_BANNER_ITEMS = 5000;
 
@@ -52,7 +52,7 @@ namespace AppCenter.Widgets {
                 name_label.wrap = true;
                 name_label.max_width_chars = 50;
 
-                var summary_label = new Gtk.Label (has_package ? package.get_summary () : _("An open, pay-what-you-want app store"));
+                var summary_label = new Gtk.Label (has_package ? package.get_summary () : _("Install, Remove and Update Applications"));
                 summary_label.get_style_context ().add_class ("h2");
                 summary_label.xalign = 0;
                 summary_label.use_markup = true;
@@ -65,7 +65,7 @@ namespace AppCenter.Widgets {
                     int close_paragraph_index = description.index_of ("</p>", 0);
                     description = description.slice (3, close_paragraph_index);
                 } else {
-                    description = _("Get the apps that you need at a price you can afford.");
+                    //description = _("Get the apps that you need at a price you can afford.");
                 }
 
                 var description_label = new Gtk.Label (description);
@@ -98,7 +98,7 @@ namespace AppCenter.Widgets {
             }
         }
 
-        private string _background_color = "#68758e";
+        private string _background_color = "#D99CBE";
         public string background_color {
             get {
                 return _background_color;
@@ -149,7 +149,7 @@ namespace AppCenter.Widgets {
         }
 
         public void set_default_brand () {
-            background_color = "#665888";
+            background_color = "#794D6E";
             foreground_color = DEFAULT_BANNER_COLOR_PRIMARY_TEXT;
 
             brand_widget = new BannerWidget (null);
