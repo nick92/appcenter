@@ -17,6 +17,7 @@ You'll need the following dependencies:
 * [cmake-elementary](https://github.com/elementary/cmake-modules)
 * intltool
 * libappstream-dev (>= 0.10)
+* [libsnapd-glib](https://github.com/snapcore/snapd-glib) (>=1.19) 
 * libgee-0.8-dev
 * libgranite-dev (>=0.5)
 * libgtk-3-dev
