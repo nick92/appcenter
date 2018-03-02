@@ -24,6 +24,8 @@ public class AppCenter.Views.CategoryView : View {
     //AppListUpdateView app_list_view;
     Widgets.CategoryFlowBox category_flow;
     private string current_category;
+    private Views.AppListView app_list_view;
+    private Gtk.ScrolledWindow category_scrolled;
     public AppStream.Category currently_viewed_category;
     public bool viewing_package { get; private set; default = false; }
 
@@ -37,7 +39,10 @@ public class AppCenter.Views.CategoryView : View {
         category_flow = new Widgets.CategoryFlowBox ();
         //category_flow.valign = Gtk.Align.CENTER;
 
-        add (category_flow);
+        category_scrolled = new Gtk.ScrolledWindow (null, null);
+        category_scrolled.add (category_flow);
+
+        add (category_scrolled);
 
         category_flow.child_activated.connect ((child) => {
             var item = child as Widgets.CategoryItem;
@@ -67,7 +72,7 @@ public class AppCenter.Views.CategoryView : View {
             return;
         }
 
-        var app_list_view = new Views.AppListView ();
+        app_list_view = new Views.AppListView ();
         app_list_view.show_all ();
         add_named (app_list_view, category.name);
         set_visible_child (app_list_view);
@@ -85,11 +90,22 @@ public class AppCenter.Views.CategoryView : View {
 
     public override void return_clicked () {
         if (previous_package != null) {
-            //show_package (previous_package);
-            subview_entered (C_("view", "Category"), false, null);
+            show_package (previous_package);
+            if (current_category != null) {
+                subview_entered (current_category, false, "");
+            } else {
+                subview_entered (_("Categories"), false, "");
+            }
+        } else if (viewing_package && current_category != null) {
+            set_visible_child_name (current_category);
+            viewing_package = false;
+            subview_entered (_("Categories"), true, current_category, _("Search %s").printf (current_category));
         } else {
-            set_visible_child (category_flow);
-            subview_entered (null, false);
+            set_visible_child (category_scrolled);
+            viewing_package = false;
+            currently_viewed_category = null;
+            current_category = null;
+            subview_entered (null, true);
         }
     }
 }

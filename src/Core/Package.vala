@@ -50,7 +50,7 @@ public class AppCenterCore.Package : Object {
     public ChangeInformation change_information { public get; private set; }
     public Gee.TreeSet<Pk.Package> installed_packages { public get; private set; }
     public GLib.Cancellable action_cancellable { public get; private set; }
-    public State state { public get; private set; default = State.NOT_INSTALLED; }
+    public State state { public get; public set; default = State.NOT_INSTALLED; }
 
     public double progress {
         get {
@@ -182,6 +182,7 @@ public class AppCenterCore.Package : Object {
     }
 
     private string? name = null;
+    private string? title = null;
     public string? description = null;
     private string? summary = null;
     private string? color_primary = null;
@@ -227,16 +228,20 @@ public class AppCenterCore.Package : Object {
 
     public void set_status (Snapd.SnapStatus snapstatus) {
         switch ( snapstatus ) {
-            case snapstatus.INSTALLED :
+            case Snapd.SnapStatus.INSTALLED :
                 state = State.INSTALLED;
                 break;
-            case snapstatus.ACTIVE :
+            case Snapd.SnapStatus.ACTIVE :
                 state = State.INSTALLED;
                 break;
             default :
                 state = State.NOT_INSTALLED;
                 break;
         }
+    }
+
+    public void set_title (string snap_title){
+        this.title = snap_title;
     }
 
     public async bool update () {
@@ -397,6 +402,15 @@ public class AppCenterCore.Package : Object {
         }
 
         return name;
+    }
+
+    public string? get_title () {
+        if (title != null) {
+            return title;
+        }
+        else {
+            return get_name ();
+        }
     }
 
     public string? get_description () {

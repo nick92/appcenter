@@ -42,6 +42,8 @@ namespace AppCenter.Widgets {
                 column_spacing = 24;
                 halign = Gtk.Align.CENTER;
                 valign = Gtk.Align.CENTER;
+                margin_top = 34;
+                margin_bottom = 24;
 
                 bool has_package = package != null;
 
@@ -125,7 +127,7 @@ namespace AppCenter.Widgets {
         private uint timer_id;
 
         construct {
-            height_request = 300;
+            //height_request = 250;
 
             stack = new Gtk.Stack ();
             stack.valign = Gtk.Align.CENTER;

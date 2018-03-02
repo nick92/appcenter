@@ -33,8 +33,9 @@ public class AppCenterCore.SnapClient : Object {
 
         try{
             binstall = yield client.install2_async (Snapd.InstallFlags.CLASSIC, snap.get_name (), null, null, cb, cancellable);
-        } catch (SpawnError e) {
-            stdout.printf(e.message);
+        } catch (Error e) {
+            critical(e.message);
+            return false;
         }
 
         return binstall;
@@ -45,8 +46,9 @@ public class AppCenterCore.SnapClient : Object {
 
         try{
             binstall = yield client.remove_async (snap.get_name (), cb, cancellable);
-        } catch (SpawnError e) {
-            stdout.printf(e.message);
+        } catch (Error e) {
+            critical(e.message);
+            return false;
         }
 
         return binstall;
@@ -54,11 +56,12 @@ public class AppCenterCore.SnapClient : Object {
 
     public async bool install_snap_package(Package snap, Snapd.ProgressCallback cb, GLib.Cancellable cancellable){
         bool binstall = false;
-
+        
         try{
             binstall = yield client.install2_async (Snapd.InstallFlags.CLASSIC, snap.get_name (), null, null, cb, cancellable);
-        } catch (SpawnError e) {
-            stdout.printf(e.message);
+        } catch (Error e) {
+            critical(e.message);
+            return false;
         }
 
         return binstall;

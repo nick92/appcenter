@@ -225,7 +225,7 @@ namespace AppCenter {
             });*/
 
             new Thread<void*> ("update-trending-carousel", () => {
-                var packages_for_carousel = new Gee.LinkedList<AppCenterCore.Package> ();
+                //var packages_for_carousel = new Gee.LinkedList<AppCenterCore.Package> ();
 
                 Idle.add (() => {
                     var featured_snaps = AppCenterCore.SnapClient.get_default ().getFeaturedSnaps ();

@@ -4,7 +4,6 @@ vala_precompile(VALA_C ${EXEC_NAME}
     Core/SnapClient.vala
     Core/Houston.vala
     Core/Package.vala
-    Core/SnapPackage.vala
     Core/Task.vala
     Core/UpdateManager.vala
     Core/ComponentValidator.vala

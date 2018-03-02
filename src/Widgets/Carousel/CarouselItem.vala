@@ -29,7 +29,7 @@ public class AppCenter.Widgets.CarouselItem : Gtk.FlowBoxChild {
         icon.gicon = package.get_icon (64);
         icon.pixel_size = 64;
 
-        var name_label = new Gtk.Label (package.get_name ());
+        var name_label = new Gtk.Label (package.get_title ());
         name_label.valign = Gtk.Align.END;
         name_label.xalign = 0;
         name_label.get_style_context ().add_class ("h3");
@@ -39,13 +39,22 @@ public class AppCenter.Widgets.CarouselItem : Gtk.FlowBoxChild {
         category_label.xalign = 0;
         category_label.get_style_context ().add_class (Gtk.STYLE_CLASS_DIM_LABEL);
 
+        var installed_icon = new Gtk.Image.from_icon_name ("package-install", Gtk.IconSize.SMALL_TOOLBAR);
+        installed_icon.valign = Gtk.Align.START;
+        installed_icon.xalign = 0;
+        installed_icon.visible = false;
+        //icon.gicon = package.get_icon (64);
+        //icon.pixel_size = 64;
+
         var grid = new Gtk.Grid ();
         grid.column_spacing = 12;
         grid.row_spacing = 3;
         grid.margin = 6;
         grid.attach (icon, 0, 0, 1, 2);
         grid.attach (name_label, 1, 0, 1, 1);
+        //grid.attach (installed_icon, 1, 1, 1, 1);
         grid.attach (category_label, 1, 1, 1, 1);
+
 
         add (grid);
     }

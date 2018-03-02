@@ -37,7 +37,6 @@ public class AppCenterCore.UpdateManager : Object {
 
     public async Pk.Results get_updates (Cancellable? cancellable) throws Error {
         var client = AppCenterCore.Client.get_pk_client ();
-
         try {
             Pk.Results update_results = yield client.get_updates_async (0, cancellable, (t, p) => { });
 
