@@ -25,6 +25,7 @@ public class AppCenter.MainWindow : Gtk.ApplicationWindow {
         }
     }
 
+    public AppCenter.Selector view_selector;
     private Gtk.Revealer view_mode_revealer;
     private Gtk.Stack custom_title_stack;
     private Gtk.Label homepage_header;
@@ -140,8 +141,8 @@ public class AppCenter.MainWindow : Gtk.ApplicationWindow {
     }
 
     construct {
-        icon_name = "system-software-install";
-        set_size_request (910, 640);
+        icon_name = "apphive";
+        set_size_request (960, 440);
         title = _(Build.APP_NAME);
         window_position = Gtk.WindowPosition.CENTER;
 
@@ -155,6 +156,10 @@ public class AppCenter.MainWindow : Gtk.ApplicationWindow {
         homepage_view_id = view_mode.append_text (_("Home"));
         category_view_id = view_mode.append_text (C_("view", "Categories"));
         installed_view_id = view_mode.append_text (C_("view", "Installed"));
+
+        view_selector = new Selector(Gtk.Orientation.HORIZONTAL);
+        view_selector.margin_end = 6;
+        view_selector.margin_start = 6;
 
         view_mode_revealer = new Gtk.Revealer ();
         view_mode_revealer.reveal_child = true;
@@ -170,7 +175,7 @@ public class AppCenter.MainWindow : Gtk.ApplicationWindow {
         custom_title_stack.set_visible_child (view_mode_revealer);
 
         search_entry = new Gtk.SearchEntry ();
-        search_entry.placeholder_text = _("Search Apps");
+        search_entry.placeholder_text = _("Search Apps...");
 
         spinner = new Gtk.Spinner ();
 
@@ -304,7 +309,7 @@ public class AppCenter.MainWindow : Gtk.ApplicationWindow {
         if (custom_search_placeholder != null) {
             search_entry.placeholder_text = custom_search_placeholder;
         } else {
-            search_entry.placeholder_text = _("Search Apps");
+            search_entry.placeholder_text = _("Search Apps...");
         }
 
         search_entry.sensitive = allow_search;

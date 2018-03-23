@@ -210,10 +210,6 @@ public class AppCenterCore.Package : Object {
         Object (component: component);
     }
 
-    public Package.convertToComponent (Snapd.Snap snap) {
-        Object (snap: snap);
-    }
-
     public void update_state () {
         if (installed) {
             if (change_information.has_changes ()) {
@@ -567,7 +563,9 @@ public class AppCenterCore.Package : Object {
             return app_info != null;
         }
 
+        //string? desktop_id = component.get_launchable ().get_entries(AppStream.LaunchableKind.DESKTOP_ID)[0];
         string? desktop_id = component.get_desktop_id ();
+        
         if (desktop_id != null) {
             app_info = new DesktopAppInfo (desktop_id);
         }

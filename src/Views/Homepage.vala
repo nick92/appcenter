@@ -42,7 +42,7 @@ namespace AppCenter {
         }
 
         construct {
-            //var houston = AppCenterCore.Houston.get_default ();
+            var houston = AppCenterCore.Houston.get_default ();
 
             var switcher = new Widgets.Switcher ();
             switcher.halign = Gtk.Align.CENTER;
@@ -55,14 +55,14 @@ namespace AppCenter {
             newest_banner = new Widgets.Banner (switcher);
             newest_banner.get_style_context ().add_class ("home");
             newest_banner.margin = 12;
-            newest_banner.clicked.connect (() => {
+            /*newest_banner.clicked.connect (() => {
                 var package = newest_banner.get_package ();
                 if (package != null) {
                     show_package (package);
                 }
-            });
+            });*/
 
-            var recently_updated_label = new Gtk.Label (_("Recently Updated"));
+            var recently_updated_label = new Gtk.Label (_("Useful Apps"));
             recently_updated_label.get_style_context ().add_class ("h4");
             recently_updated_label.xalign = 0;
             recently_updated_label.margin_start = 10;
@@ -76,7 +76,7 @@ namespace AppCenter {
             recently_updated_grid.attach (recently_updated_carousel, 0, 1, 1, 1);
 
             var recently_updated_revealer = new Gtk.Revealer ();
-            recently_updated_revealer.add (recently_updated_grid );
+            recently_updated_revealer.add (recently_updated_grid);
 
             var trending_label = new Gtk.Label (_("Featured Snaps"));
             trending_label.get_style_context ().add_class ("h4");
@@ -107,9 +107,9 @@ namespace AppCenter {
             grid.margin = 12;
 
             grid.attach (newest_banner, 0, 0, 1, 1);
-            grid.attach (switcher_revealer, 0, 1, 1, 1);
-            grid.attach (trending_revealer, 0, 2, 1, 1);
-            grid.attach (recently_updated_revealer, 0, 3, 1, 1);
+            //grid.attach (switcher_revealer, 0, 1, 1, 1);
+            grid.attach (recently_updated_revealer, 0, 2, 1, 1);
+            grid.attach (trending_revealer, 0, 3, 1, 1);
             //grid.attach (categories_label, 0, 4, 1, 1);
             //grid.attach (category_flow, 0, 5, 1, 1);
 
@@ -118,10 +118,10 @@ namespace AppCenter {
 
             add (category_scrolled);
 
-            var local_package = App.local_package;
+            /*var local_package = App.local_package;
             if (local_package != null) {
                 newest_banner.add_package (local_package);
-            }
+            }*/
 
             /*houston.get_app_ids.begin ("/newest/project", (obj, res) => {
                 var newest_ids = houston.get_app_ids.end (res);
@@ -189,13 +189,13 @@ namespace AppCenter {
                     }
                     return null;
                 });
-            });
+            });*/
 
             houston.get_app_ids.begin ("/newest/downloads", (obj, res) => {
-                var trending_ids = houston.get_app_ids.end (res);
-                new Thread<void*> ("update-trending-carousel", () => {
+                var updated_ids = houston.get_app_ids.end (res);
+                new Thread<void*> ("update-recent-carousel", () => {
                     var packages_for_carousel = new Gee.LinkedList<AppCenterCore.Package> ();
-                    foreach (var package in trending_ids) {
+                    foreach (var package in updated_ids) {
                         if (packages_for_carousel.size >= NUM_PACKAGES_IN_CAROUSEL) {
                             break;
                         }
@@ -213,19 +213,18 @@ namespace AppCenter {
 
                     if (!packages_for_carousel.is_empty) {
                         Idle.add (() => {
-                            foreach (var trending_package in packages_for_carousel) {
-                                trending_carousel.add_package (trending_package);
+                            foreach (var banner_package in packages_for_carousel) {
+                                recently_updated_carousel.add_package (banner_package);
                             }
-                            trending_revealer.reveal_child = true;
+                            recently_updated_revealer.reveal_child = true;
                             return false;
                         });
                     }
                     return null;
                 });
-            });*/
-
+            });
             new Thread<void*> ("update-trending-carousel", () => {
-                //var packages_for_carousel = new Gee.LinkedList<AppCenterCore.Package> ();
+                var packages_for_carousel = new Gee.LinkedList<AppCenterCore.Package> ();
 
                 Idle.add (() => {
                     var featured_snaps = AppCenterCore.SnapClient.get_default ().getFeaturedSnaps ();
@@ -233,18 +232,20 @@ namespace AppCenter {
                     featured_snaps.foreach ((snap) => {
                         var package = AppCenterCore.Client.get_default ().convert_snap_to_component(snap);
                         if(package != null){
-                            trending_carousel.add_package (package);
+                            if (package.state == AppCenterCore.Package.State.NOT_INSTALLED) {
+                                trending_carousel.add_package (package);
+                            }
                         }
                     });
 
-                    /*foreach (var trending_package in packages_for_carousel) {
+                    foreach (var trending_package in packages_for_carousel) {
                         trending_carousel.add_package (trending_package);
-                    }*/
+                    }
                     trending_revealer.reveal_child = true;
                     return false;
                 });
 
-                /*if (!packages_for_carousel.is_empty) {
+                if (!packages_for_carousel.is_empty) {
                     Idle.add (() => {
                         foreach (var trending_package in packages_for_carousel) {
                             trending_carousel.add_package (trending_package);
@@ -252,9 +253,10 @@ namespace AppCenter {
                         trending_revealer.reveal_child = true;
                         return false;
                     });
-                }*/
+                }
                 return null;
             });
+            //});
 
             recently_updated_carousel.package_activated.connect (show_package);
             trending_carousel.package_activated.connect (show_package);
@@ -289,7 +291,7 @@ namespace AppCenter {
             }
         }
 
-        private void show_app_list_for_category (AppStream.Category category) {
+        /*private void show_app_list_for_category (AppStream.Category category) {
             subview_entered (_("Home"), true, category.name, _("Search %s").printf (category.name));
             current_category = category.name;
             var child = get_child_by_name (category.name);
@@ -312,6 +314,6 @@ namespace AppCenter {
             unowned Client client = Client.get_default ();
             var apps = client.get_applications_for_category (category);
             app_list_view.add_packages (apps);
-        }
+        }*/
     }
 }

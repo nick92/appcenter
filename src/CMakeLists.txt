@@ -41,6 +41,7 @@ vala_precompile(VALA_C ${EXEC_NAME}
     Widgets/Switcher.vala
     Widgets/ReleaseListBox.vala
     Widgets/ReleaseRow.vala
+    Widgets/Selector.vala
     Services/DBusInterfaces.vala
     Services/DBusServer.vala
     Services/SearchProvider.vala
@@ -66,7 +67,7 @@ OPTIONS
 
 include (GResource)
 glib_compile_resources (GLIB_RESOURCES_CATEGORIES SOURCE ../data/icons/categories.gresource.xml)
-glib_compile_resources (GLIB_RESOURCES_CSS SOURCE ../data/io.elementary.appcenter.gresource.xml)
+glib_compile_resources (GLIB_RESOURCES_CSS SOURCE ../data/${CMAKE_PROJECT_NAME}.gresource.xml)
 
 add_executable (${EXEC_NAME} ${VALA_C} ${GLIB_RESOURCES_CATEGORIES} ${GLIB_RESOURCES_CSS})
 target_link_libraries (${EXEC_NAME} ${DEPS_LIBRARIES} ${UNITY_LIBRARIES})

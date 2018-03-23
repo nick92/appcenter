@@ -94,12 +94,15 @@ public class AppCenterCore.Client : Object {
                 }
 
                 var package = new AppCenterCore.Package.addComponent(comp);
-                //package.component = comp;
-
                 foreach (var pkg_name in comp.get_pkgnames ()) {
                     package_list[pkg_name] = package;
                 }
 
+            });
+            snapdClient.getInstalledPackages().foreach ((snap) => {
+                var snap_package = convert_snap_to_component(snap);
+                var package = convert_to_package(snap);
+                package_list[package.get_name ()] = snap_package;
             });
         } catch (Error e) {
             critical (e.message);
@@ -348,21 +351,6 @@ public class AppCenterCore.Client : Object {
             }
         }
 
-        //get installed snaps
-        /*snapdClient.getInstalledPackages ().foreach ((snap) => {
-            var package = convert_snap_to_component(snap);
-
-            var pk_package = package.find_package ();
-            if (pk_package != null && pk_package.get_info () == Pk.Info.INSTALLED) {
-                package.installed_packages.add (pk_package);
-                package.update_state ();
-            }
-            if (package != null) {
-                //populate_package (package, convert_to_package(snap));
-                packages.add (package);
-            }
-        });*/
-
         return packages;
     }
 
@@ -376,15 +364,6 @@ public class AppCenterCore.Client : Object {
                 packages.add (package);
             }
         }
-
-        //get installed snaps
-        snapdClient.getInstalledPackages ().foreach ((snap) => {
-            var package = convert_snap_to_component(snap);
-            if (package != null) {
-                //populate_package (package, convert_to_package(snap));
-                packages.add (package);
-            }
-        });
 
         return packages;
     }
@@ -701,11 +680,8 @@ public class AppCenterCore.Client : Object {
             });
 
             GLib.GenericArray<weak Snapd.Snap> snapResult = yield snapdClient.getInstalledPackagesAsync ();
-            //GLib.GenericArray<weak Snapd.Snap> snapResultUpdate = yield snapdClient.getRefreshablePackages();
-
             snapResult.foreach ((snap) => {
                 installed.add (convert_to_package(snap));
-                package_list[snap.id] = convert_snap_to_component(snap);
             });
 
         } catch (Error e) {
@@ -729,7 +705,6 @@ public class AppCenterCore.Client : Object {
             });
 
             GLib.GenericArray<weak Snapd.Snap> snapResult = snapdClient.getInstalledPackages ();
-
             snapResult.foreach ((snap) => {
                 installed.add (convert_to_package(snap));
             });
@@ -784,11 +759,7 @@ public class AppCenterCore.Client : Object {
         package.summary = snap.get_summary ();
         package.set_id(SNAP_PACKAGE_ID.printf(snap.get_id (), snap.get_version ()));
         package.size = snap.get_installed_size ();
-
-        if(update)
-            package.set_info(Pk.Info.INSTALLED);
-        else
-            package.set_info(Pk.Info.INSTALLED);
+        package.set_info(Pk.Info.INSTALLED);
 
         return package;
     }
@@ -807,6 +778,7 @@ public class AppCenterCore.Client : Object {
         snap_component.summary = _(snap.get_summary ());
         snap_component.description = _(snap.get_description ());
         snap_component.project_license = _(snap.get_license ());
+        //snap_component.deskto
 
         snap.get_screenshots ().foreach ((screens) => {
             var image = new AppStream.Image ();
@@ -823,7 +795,12 @@ public class AppCenterCore.Client : Object {
         var package = new AppCenterCore.Package.addComponent (snap_component);
         package.set_title (snap.get_title ());
         package.latest_version = snap.version;
-        package.set_status(snap.status);
+
+        foreach (var pkg in package_list.values) {
+            if (pkg.component.id == snap_component.id) {
+                package.set_status(Snapd.SnapStatus.INSTALLED);
+            }
+        }
 
         return package;
     }

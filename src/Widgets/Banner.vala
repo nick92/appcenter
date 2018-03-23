@@ -52,6 +52,7 @@ namespace AppCenter.Widgets {
                 name_label.xalign = 0;
                 name_label.use_markup = true;
                 name_label.wrap = true;
+                name_label.margin_top = 5;
                 name_label.max_width_chars = 50;
 
                 var summary_label = new Gtk.Label (has_package ? package.get_summary () : _("Install, Remove and Update Applications"));
@@ -59,6 +60,7 @@ namespace AppCenter.Widgets {
                 summary_label.xalign = 0;
                 summary_label.use_markup = true;
                 summary_label.wrap = true;
+                summary_label.margin_top = 5;
                 summary_label.max_width_chars = 50;
 
                 string description;
@@ -85,7 +87,7 @@ namespace AppCenter.Widgets {
                 if (has_package) {
                     icon.gicon = package.get_icon (128);
                 } else {
-                    icon.icon_name = "system-software-install";
+                    icon.icon_name = "apphive";
                 }
 
                 attach (icon, 0, 0, 1, 3);

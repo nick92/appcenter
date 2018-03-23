@@ -44,8 +44,40 @@ public class AppCenterCore.Houston : Object {
         return root;
     }
 
+    public string[] get_app_ids_sync (string endpoint) {
+        //var uri = HOUSTON_API_URL + endpoint;
+        //var uri = "/home/nick/work/Enso/apphive/data/json/latest.json";
+        var uri = "http://127.0.0.1:8081/";
+        string[] app_ids = {};
+
+        debug ("Requesting newest applications from %s", uri);
+
+        var message = new Soup.Message ("GET", uri);
+        session.queue_message (message, (sess, mess) => {
+            try {
+                var res = process_response ((string) mess.response_body.data);
+                if (res.has_member ("data")) {
+                    var data = res.get_array_member ("data");
+
+                    foreach (var id in data.get_elements ()) {
+                        app_ids += ((string) id.get_value ());
+                    }
+                }
+            } catch (Error e) {
+                warning ("Houston: %s", e.message);
+            }
+
+            //Idle.add (get_app_ids.callback);
+        });
+
+        //yield;
+        return app_ids;
+    }
+
     public async string[] get_app_ids (string endpoint) {
-        var uri = HOUSTON_API_URL + endpoint;
+        //var uri = HOUSTON_API_URL + endpoint;
+        //var uri = "/home/nick/work/Enso/apphive/data/json/latest.json";
+        var uri = "http://127.0.0.1:8081/";
         string[] app_ids = {};
 
         debug ("Requesting newest applications from %s", uri);

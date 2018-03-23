@@ -48,7 +48,7 @@ namespace AppCenter.Widgets {
 
         private void add_child (Gtk.Widget widget) {
             var button = new Gtk.ToggleButton ();
-            button.image = new Gtk.Image.from_icon_name ("mail-mark-unread-symbolic", Gtk.IconSize.MENU);
+            button.image = new Gtk.Image.from_icon_name ("panther-icon-index", Gtk.IconSize.MENU);
             button.get_style_context ().add_class (Gtk.STYLE_CLASS_FLAT);
             button.get_style_context ().add_class ("switcher");
             button.button_release_event.connect (() => {
