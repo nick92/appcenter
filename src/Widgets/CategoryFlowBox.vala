@@ -36,11 +36,11 @@ public class AppCenter.Widgets.CategoryFlowBox : Gtk.FlowBox {
         add (get_category (_("Office"), "applications-office", {"Office"}, "office"));
         add (get_category (_("System Tools"), "applications-system", {"System"}, "system"));
         add (get_category (_("Video"), "applications-multimedia", {"Video"}, "video"));
-        add (get_category (_("Graphics"), "krita", {"Graphics"}, "graphics"));
+        add (get_category (_("Graphics"), "applications-graphics", {"Graphics"}, "graphics"));
         add (get_category (_("Games"), "applications-games", {"Game"}, "games"));
         add (get_category (_("Education"), "accessories-ebook-reader", {"Education"}, "education"));
         add (get_category (_("Internet"), "applications-internet", {"Network"}, "internet"));
-        add (get_category (_("Science"), "fluid", {"Science"}, "science"));
+        add (get_category (_("Science"), "applications-science", {"Science"}, "science"));
         add (get_category (_("Universal Access"), "accessibility", {"Accessibility"}, "accessibility"));
 
         /*add (get_category (_("Sound"), "", {"Audio"}, "audio"));

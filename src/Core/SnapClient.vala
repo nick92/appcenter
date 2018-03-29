@@ -32,7 +32,7 @@ public class AppCenterCore.SnapClient : Object {
         bool binstall = false;
 
         try{
-            binstall = yield client.install2_async (Snapd.InstallFlags.CLASSIC, snap.get_name (), null, null, cb, cancellable);
+            binstall = yield client.install2_async (Snapd.InstallFlags.NONE, snap.get_name (), null, null, cb, cancellable);
         } catch (Error e) {
             critical(e.message);
             return false;
@@ -58,7 +58,7 @@ public class AppCenterCore.SnapClient : Object {
         bool binstall = false;
         
         try{
-            binstall = yield client.install2_async (Snapd.InstallFlags.CLASSIC, snap.get_name (), null, null, cb, cancellable);
+            binstall = yield client.install2_async (Snapd.InstallFlags.NONE, snap.get_name (), null, null, cb, cancellable);
         } catch (Error e) {
             critical(e.message);
             return false;

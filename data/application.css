@@ -101,6 +101,23 @@
     font-weight: 300;
 }
 
+.h1 {
+	font-size: 40px;
+}
+
+.h2 {
+	font-size: 25px;
+}
+
+.h3 {
+    font-size: 15px;
+    font-weight: 300;
+}
+
+.h4 {
+	font-size: 15px;
+}
+
 /*
 .category.audio {
     background-image: -gtk-scaled(url("resource:///io/elementary/appcenter/backgrounds/audio.svg"), url("resource:///io/elementary/appcenter/backgrounds/audio@2x.svg")),
