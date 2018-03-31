@@ -31,6 +31,8 @@ public class AppCenterCore.ChangeInformation : Object {
     private int last_progress;
     private Pk.Status current_status;
     private double progress_denom;
+    private int64 progress_done;
+    private int64 progress_total;
 
     construct {
         changes = new Gee.TreeSet<Pk.Package> ();
@@ -212,11 +214,15 @@ public class AppCenterCore.ChangeInformation : Object {
                 status_changed ();
                 progress_denom = 100.0f;
                 change.get_tasks().foreach ((task) => {
-                    current_progress = last_progress + int.parse(task.progress_total.to_string());
+					progress_done += task.get_progress_done ();
+					progress_total += task.get_progress_total ();
+                    /*current_progress = last_progress + int.parse(task.progress_total.to_string());
                     last_progress = current_progress;
                     this.progress = last_progress / progress_denom;
-                    progress_changed ();
+                    progress_changed ();*/
                 });
+                this.progress = progress_total / progress_denom;
+				progress_changed ();
             break;
             case "Abort":
                 can_cancel = true;
