@@ -42,6 +42,7 @@ public class AppCenterCore.Client : Object {
 
     public AppCenterCore.Package os_updates { public get; private set; }
     public AppCenterCore.Package snap_packages { public get; private set; }
+    public Gee.TreeSet<Snapd.Snap> update_snap_packages { public get; private set; }
     public Gee.TreeSet<AppCenterCore.Package> driver_list { get; construct; }
 
     private Gee.HashMap<string, AppCenterCore.Package> package_list;
@@ -99,6 +100,11 @@ public class AppCenterCore.Client : Object {
                 }
 
             });
+            
+            snapdClient.getRefreshablePackages().foreach ((snap) => {
+				update_snap_packages.add(snap);
+			});
+			
             snapdClient.getInstalledPackages().foreach ((snap) => {
                 var snap_package = convert_snap_to_component(snap);
                 var package = convert_to_package(snap);
@@ -779,7 +785,6 @@ public class AppCenterCore.Client : Object {
         snap_component.summary = _(snap.get_summary ());
         snap_component.description = _(snap.get_description ());
         snap_component.project_license = _(snap.get_license ());
-        //snap_component.deskto
 
         snap.get_screenshots ().foreach ((screens) => {
             var image = new AppStream.Image ();
@@ -799,9 +804,15 @@ public class AppCenterCore.Client : Object {
 
         foreach (var pkg in package_list.values) {
             if (pkg.component.id == snap_component.id) {
-                package.set_status(Snapd.SnapStatus.INSTALLED);
+				if(update_snap_packages.contains(snap))
+					package.set_status(Package.State.UPDATE_AVAILABLE);
+				else
+					package.set_status(Package.State.INSTALLED);	
             }
         }
+        
+        var control = new Pk.Control ();
+        control.updates_changed.connect (updates_changed_callback);
 
         return package;
     }

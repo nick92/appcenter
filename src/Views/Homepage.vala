@@ -21,8 +21,8 @@
 
 using AppCenterCore;
 
-const int NUM_PACKAGES_IN_BANNER = 5;
-const int NUM_PACKAGES_IN_CAROUSEL = 5;
+const int NUM_PACKAGES_IN_BANNER = 1;
+const int NUM_PACKAGES_IN_CAROUSEL = 10;
 
 namespace AppCenter {
     public class Homepage : View {
@@ -108,8 +108,8 @@ namespace AppCenter {
 
             grid.attach (newest_banner, 0, 0, 1, 1);
             //grid.attach (switcher_revealer, 0, 1, 1, 1);
-            grid.attach (recently_updated_revealer, 0, 2, 1, 1);
-            grid.attach (trending_revealer, 0, 3, 1, 1);
+            grid.attach (recently_updated_revealer, 0, 1, 1, 1);
+            grid.attach (trending_revealer, 0, 2, 1, 1);
             //grid.attach (categories_label, 0, 4, 1, 1);
             //grid.attach (category_flow, 0, 5, 1, 1);
 
@@ -191,14 +191,17 @@ namespace AppCenter {
                 });
             });*/
 
-            houston.get_app_ids.begin ("/newest/downloads", (obj, res) => {
-                var updated_ids = houston.get_app_ids.end (res);
-                new Thread<void*> ("update-recent-carousel", () => {
-                    var packages_for_carousel = new Gee.LinkedList<AppCenterCore.Package> ();
+			new Thread<void*> ("update-recent-carousel", () => {
+				houston.get_app_ids.begin ("/packages/list", (obj, res) => {
+				var updated_ids = houston.get_app_ids.end (res);
+				var packages_for_carousel = new Gee.LinkedList<AppCenterCore.Package> ();
+				//Idle.add (() => {
+					//var updated_ids = houston.get_app_ids_sync ("/packages/list");
+                    //var packages_for_carousel = new Gee.LinkedList<AppCenterCore.Package> ();
                     foreach (var package in updated_ids) {
-                        if (packages_for_carousel.size >= NUM_PACKAGES_IN_CAROUSEL) {
-                            break;
-                        }
+                        //if (packages_for_carousel.size >= NUM_PACKAGES_IN_CAROUSEL) {
+                          //  break;
+                        //}
 
                         var candidate = package + ".desktop";
                         var candidate_package = AppCenterCore.Client.get_default ().get_package_for_component_id (candidate);
@@ -210,8 +213,16 @@ namespace AppCenter {
                             }
                         }
                     }
-
                     if (!packages_for_carousel.is_empty) {
+						foreach (var banner_package in packages_for_carousel) {
+							recently_updated_carousel.add_package (banner_package);
+						}
+						recently_updated_revealer.reveal_child = true;
+					}
+					//return false;
+				//});
+
+                    /*if (!packages_for_carousel.is_empty) {
                         Idle.add (() => {
                             foreach (var banner_package in packages_for_carousel) {
                                 recently_updated_carousel.add_package (banner_package);
@@ -219,9 +230,9 @@ namespace AppCenter {
                             recently_updated_revealer.reveal_child = true;
                             return false;
                         });
-                    }
-                    return null;
+                    }*/
                 });
+                return null;
             });
             new Thread<void*> ("update-trending-carousel", () => {
                 var packages_for_carousel = new Gee.LinkedList<AppCenterCore.Package> ();
@@ -245,7 +256,7 @@ namespace AppCenter {
                     return false;
                 });
 
-                if (!packages_for_carousel.is_empty) {
+                /*if (!packages_for_carousel.is_empty) {
                     Idle.add (() => {
                         foreach (var trending_package in packages_for_carousel) {
                             trending_carousel.add_package (trending_package);
@@ -253,7 +264,7 @@ namespace AppCenter {
                         trending_revealer.reveal_child = true;
                         return false;
                     });
-                }
+                }*/
                 return null;
             });
             //});

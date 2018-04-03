@@ -221,7 +221,8 @@ public class AppCenterCore.ChangeInformation : Object {
                     this.progress = last_progress / progress_denom;
                     progress_changed ();*/
                 });
-                this.progress = progress_total / progress_denom;
+                this.progress = (progress_total / progress_denom);
+                //warning(progress_total.to_string () +"::"+progress_done.to_string ());
 				progress_changed ();
             break;
             case "Abort":

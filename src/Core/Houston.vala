@@ -17,7 +17,7 @@
 */
 
 public class AppCenterCore.Houston : Object {
-    private const string HOUSTON_API_URL = "https://developer.elementary.io/api";
+    private const string HOUSTON_API_URL = "http://api.enso-os.site";
 
     private Soup.Session session;
 
@@ -43,11 +43,9 @@ public class AppCenterCore.Houston : Object {
 
         return root;
     }
-
+    
     public string[] get_app_ids_sync (string endpoint) {
-        //var uri = HOUSTON_API_URL + endpoint;
-        //var uri = "/home/nick/work/Enso/apphive/data/json/latest.json";
-        var uri = "http://127.0.0.1:8081/";
+        var uri = HOUSTON_API_URL + endpoint;
         string[] app_ids = {};
 
         debug ("Requesting newest applications from %s", uri);
@@ -67,17 +65,15 @@ public class AppCenterCore.Houston : Object {
                 warning ("Houston: %s", e.message);
             }
 
-            //Idle.add (get_app_ids.callback);
+            //Idle.add (get_app_ids_sync.callback);
         });
-
+		warning(app_ids[0]);
         //yield;
         return app_ids;
     }
-
+    
     public async string[] get_app_ids (string endpoint) {
-        //var uri = HOUSTON_API_URL + endpoint;
-        //var uri = "/home/nick/work/Enso/apphive/data/json/latest.json";
-        var uri = "http://127.0.0.1:8081/";
+        var uri = HOUSTON_API_URL + endpoint;
         string[] app_ids = {};
 
         debug ("Requesting newest applications from %s", uri);
@@ -99,7 +95,7 @@ public class AppCenterCore.Houston : Object {
 
             Idle.add (get_app_ids.callback);
         });
-
+		
         yield;
         return app_ids;
     }

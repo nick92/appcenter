@@ -18,6 +18,7 @@
 .banner {
     background-color: @banner_bg_color;
     background-image: linear-gradient(@banner_bg_color, @banner_bg_color);
+		/*background: linear-gradient(to bottom, #D99CBE 0%,#de47ac 100%);*/
     color: @banner_fg_color;
     icon-shadow: none;
     text-shadow: none;

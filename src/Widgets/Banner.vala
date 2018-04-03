@@ -27,7 +27,7 @@ const string BANNER_STYLE_CSS = """
     }
 """;
 
-const string DEFAULT_BANNER_COLOR_PRIMARY = "#10A7B6";
+const string DEFAULT_BANNER_COLOR_PRIMARY = "#43444F";
 const string DEFAULT_BANNER_COLOR_PRIMARY_TEXT = "white";
 const int MILLISECONDS_BETWEEN_BANNER_ITEMS = 5000;
 
@@ -102,7 +102,7 @@ namespace AppCenter.Widgets {
             }
         }
 
-        private string _background_color = "#D99CBE";
+        private string _background_color = "#9800B2";
         public string background_color {
             get {
                 return _background_color;

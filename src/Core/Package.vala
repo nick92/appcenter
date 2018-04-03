@@ -222,18 +222,8 @@ public class AppCenterCore.Package : Object {
         }
     }
 
-    public void set_status (Snapd.SnapStatus snapstatus) {
-        switch ( snapstatus ) {
-            case Snapd.SnapStatus.INSTALLED :
-                state = State.INSTALLED;
-                break;
-            case Snapd.SnapStatus.ACTIVE :
-                state = State.INSTALLED;
-                break;
-            default :
-                state = State.NOT_INSTALLED;
-                break;
-        }
+    public void set_status (State snapstatus) {
+        state = snapstatus;
     }
 
     public void set_title (string snap_title){
