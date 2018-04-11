@@ -190,37 +190,34 @@ namespace AppCenter {
                     return null;
                 });
             });*/
-
-			new Thread<void*> ("update-recent-carousel", () => {
-				houston.get_app_ids.begin ("/packages/list", (obj, res) => {
+            
+            houston.get_app_ids ("/packages/list", (obj, res) => {
 				var updated_ids = houston.get_app_ids.end (res);
-				var packages_for_carousel = new Gee.LinkedList<AppCenterCore.Package> ();
-				//Idle.add (() => {
-					//var updated_ids = houston.get_app_ids_sync ("/packages/list");
-                    //var packages_for_carousel = new Gee.LinkedList<AppCenterCore.Package> ();
-                    foreach (var package in updated_ids) {
-                        //if (packages_for_carousel.size >= NUM_PACKAGES_IN_CAROUSEL) {
-                          //  break;
-                        //}
+				new Thread<void*> ("update-recent-carousel", () => {
+					var packages_for_carousel = new Gee.LinkedList<AppCenterCore.Package> ();
+					//Idle.add (() => {
+						//var updated_ids = houston.get_app_ids ("/packages/list");//, (obj, res) => {
+						//var updated_ids = houston.get_app_ids.end (res);
+						foreach (var package in updated_ids) {
+							
+							var candidate = package + ".desktop";
+							var candidate_package = AppCenterCore.Client.get_default ().get_package_for_component_id (candidate);
 
-                        var candidate = package + ".desktop";
-                        var candidate_package = AppCenterCore.Client.get_default ().get_package_for_component_id (candidate);
-
-                        if (candidate_package != null) {
-                            candidate_package.update_state ();
-                            if (candidate_package.state == AppCenterCore.Package.State.NOT_INSTALLED) {
-                                packages_for_carousel.add (candidate_package);
-                            }
-                        }
-                    }
-                    if (!packages_for_carousel.is_empty) {
-						foreach (var banner_package in packages_for_carousel) {
-							recently_updated_carousel.add_package (banner_package);
+							if (candidate_package != null) {
+								candidate_package.update_state ();
+								if (candidate_package.state == AppCenterCore.Package.State.NOT_INSTALLED) {
+									packages_for_carousel.add (candidate_package);
+								}
+							}
 						}
-						recently_updated_revealer.reveal_child = true;
-					}
-					//return false;
-				//});
+						if (!packages_for_carousel.is_empty) {
+							foreach (var banner_package in packages_for_carousel) {
+								recently_updated_carousel.add_package (banner_package);
+							}
+							recently_updated_revealer.reveal_child = true;
+						}
+						//return false;
+					//});
 
                     /*if (!packages_for_carousel.is_empty) {
                         Idle.add (() => {
@@ -231,12 +228,15 @@ namespace AppCenter {
                             return false;
                         });
                     }*/
+                    
+                    return null;
                 });
-                return null;
+                //return null;
+                recently_updated_carousel.package_activated.connect (show_package);
             });
+            
             new Thread<void*> ("update-trending-carousel", () => {
                 var packages_for_carousel = new Gee.LinkedList<AppCenterCore.Package> ();
-
                 Idle.add (() => {
                     var featured_snaps = AppCenterCore.SnapClient.get_default ().getFeaturedSnaps ();
 
@@ -268,8 +268,6 @@ namespace AppCenter {
                 return null;
             });
             //});
-
-            recently_updated_carousel.package_activated.connect (show_package);
             trending_carousel.package_activated.connect (show_package);
         }
 

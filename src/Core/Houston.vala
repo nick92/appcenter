@@ -44,14 +44,14 @@ public class AppCenterCore.Houston : Object {
         return root;
     }
     
-    public string[] get_app_ids_sync (string endpoint) {
+    /*public string[] get_app_ids_sync (string endpoint) {
         var uri = HOUSTON_API_URL + endpoint;
         string[] app_ids = {};
 
         debug ("Requesting newest applications from %s", uri);
 
         var message = new Soup.Message ("GET", uri);
-        session.queue_message (message, (sess, mess) => {
+        session.send_message (message, (sess, mess) => {
             try {
                 var res = process_response ((string) mess.response_body.data);
                 if (res.has_member ("data")) {
@@ -67,10 +67,10 @@ public class AppCenterCore.Houston : Object {
 
             //Idle.add (get_app_ids_sync.callback);
         });
-		warning(app_ids[0]);
+		//warning(app_ids[0]);
         //yield;
         return app_ids;
-    }
+    }*/
     
     public async string[] get_app_ids (string endpoint) {
         var uri = HOUSTON_API_URL + endpoint;
