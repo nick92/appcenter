@@ -36,6 +36,10 @@ namespace AppCenter {
         public MainWindow main_window { get; construct; }
         public Widgets.Banner newest_banner;
         public Gtk.Revealer switcher_revealer;
+        
+        private Widgets.UpdatesGrid updates_header;
+        private Gtk.Button update_all_button;
+        private AppCenterCore.Client client;
 
         public Homepage (MainWindow main_window) {
             Object (main_window: main_window);
@@ -43,6 +47,16 @@ namespace AppCenter {
 
         construct {
             var houston = AppCenterCore.Houston.get_default ();
+            /*client = AppCenterCore.Client.get_default ();
+            updates_header = new Widgets.UpdatesGrid ();
+            
+            client.updates_available.connect (() => {
+				if(client.updates_number != 0U) {
+					warning(client.updates_number.to_string ());
+					updates_header.update (client.updates_number, 0, client.updating_cache);
+					updates_header.show_all ();
+				}
+			});*/
 
             var switcher = new Widgets.Switcher ();
             switcher.halign = Gtk.Align.CENTER;
@@ -51,7 +65,8 @@ namespace AppCenter {
             switcher_revealer.set_transition_type (Gtk.RevealerTransitionType.SLIDE_DOWN);
             switcher_revealer.set_transition_duration (Widgets.Banner.TRANSITION_DURATION_MILLISECONDS);
             switcher_revealer.add (switcher);
-
+            
+            
             newest_banner = new Widgets.Banner (switcher);
             newest_banner.get_style_context ().add_class ("home");
             newest_banner.margin = 12;
@@ -105,11 +120,12 @@ namespace AppCenter {
 
             var grid = new Gtk.Grid ();
             grid.margin = 12;
-
-            grid.attach (newest_banner, 0, 0, 1, 1);
+			
+			//grid.attach (updates_header, 0, 0, 1, 1);
+            grid.attach (newest_banner, 0, 1, 1, 1);
             //grid.attach (switcher_revealer, 0, 1, 1, 1);
-            grid.attach (recently_updated_revealer, 0, 1, 1, 1);
-            grid.attach (trending_revealer, 0, 2, 1, 1);
+            grid.attach (recently_updated_revealer, 0, 2, 1, 1);
+            grid.attach (trending_revealer, 0, 3, 1, 1);
             //grid.attach (categories_label, 0, 4, 1, 1);
             //grid.attach (category_flow, 0, 5, 1, 1);
 
@@ -189,7 +205,34 @@ namespace AppCenter {
                     }
                     return null;
                 });
-            });*/
+            });
+            
+            new Thread<void*> ("update-header", () => {
+				
+				uint update_numbers = 0U;
+					uint64 update_real_size = 0ULL;
+					foreach (var package in get_packages ()) {
+						if (package.update_available || package.is_updating) {
+							update_numbers++;
+							update_real_size += package.change_information.get_size ();
+						}
+					}
+
+				updates_header.update (update_numbers, update_real_size, updating_cache);
+
+				// Unfortunately the update all button needs to be recreated everytime the header needs to be updated
+				if (!updating_cache && update_numbers > 0) {
+					update_all_button = new Gtk.Button.with_label (_("Update All"));
+					update_all_button.valign = Gtk.Align.CENTER;
+					update_all_button.get_style_context ().add_class (Gtk.STYLE_CLASS_SUGGESTED_ACTION);
+					update_all_button.clicked.connect (on_update_all);
+					action_button_group.add_widget (update_all_button);
+
+					updates_header.add_widget (update_all_button);
+				}
+
+				updates_header.show_all ();
+			});*/
             
             houston.get_app_ids ("/packages/list", (obj, res) => {
 				var updated_ids = houston.get_app_ids.end (res);

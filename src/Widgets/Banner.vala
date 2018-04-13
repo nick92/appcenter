@@ -87,7 +87,7 @@ namespace AppCenter.Widgets {
                 if (has_package) {
                     icon.gicon = package.get_icon (128);
                 } else {
-                    icon.icon_name = "apphive";
+                    icon.icon_name = "system-software-install";
                 }
 
                 attach (icon, 0, 0, 1, 3);
@@ -153,7 +153,7 @@ namespace AppCenter.Widgets {
         }
 
         public void set_default_brand () {
-            background_color = "#794D6E";
+            background_color = "#367981";
             foreground_color = DEFAULT_BANNER_COLOR_PRIMARY_TEXT;
 
             brand_widget = new BannerWidget (null);
