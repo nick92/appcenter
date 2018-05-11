@@ -58,7 +58,7 @@ public class AppCenterCore.Client : Object {
 
     private const int SECONDS_BETWEEN_REFRESHES = 60 * 60 * 24;
     private const int PACKAGEKIT_ACTIVITY_TIMEOUT_MS = 2000;
-    private const string SNAP_PACKAGE_ID = "%s;%s;amd64;installed:xenial-main";
+    private const string SNAP_PACKAGE_ID = "%s;%s;amd64;installed:bionic-main";
 
     private SuspendControl sc;
     private SnapClient snapdClient;
@@ -100,16 +100,17 @@ public class AppCenterCore.Client : Object {
                 }
 
             });
-            
+
             snapdClient.getRefreshablePackages().foreach ((snap) => {
-				update_snap_packages.add(snap);
-			});
-			
+      				update_snap_packages.add(snap);
+      			});
+
             snapdClient.getInstalledPackages().foreach ((snap) => {
                 var snap_package = convert_snap_to_component(snap);
                 var package = convert_to_package(snap);
                 package_list[package.get_name ()] = snap_package;
             });
+
         } catch (Error e) {
             critical (e.message);
         }
@@ -804,13 +805,13 @@ public class AppCenterCore.Client : Object {
 
         foreach (var pkg in package_list.values) {
             if (pkg.component.id == snap_component.id) {
-				if(update_snap_packages.contains(snap))
-					package.set_status(Package.State.UPDATE_AVAILABLE);
-				else
-					package.set_status(Package.State.INSTALLED);	
+      				if(update_snap_packages.contains(snap))
+      					package.set_status(Package.State.UPDATE_AVAILABLE);
+      				else
+      					package.set_status(Package.State.INSTALLED);
             }
         }
-        
+
         var control = new Pk.Control ();
         control.updates_changed.connect (updates_changed_callback);
 

@@ -13,9 +13,8 @@ Currently supports Deb and Snap packages
 ## Building, Testing, and Installation
 
 You'll need the following dependencies:
-* cmake
-* [cmake-elementary](https://github.com/elementary/cmake-modules)
-* intltool
+* meson
+* gettext
 * libappstream-dev (>= 0.10)
 * [libsnapd-glib](https://github.com/snapcore/snapd-glib) (>=1.19) 
 * libgee-0.8-dev
@@ -31,14 +30,11 @@ You'll need the following dependencies:
 
 It's recommended to create a clean build environment
 
-    mkdir build && cd build
+    mkdir build && meson build --prefix=/usr
+    cd build
+    ninja
 
-Run `cmake` to configure the build environment and then `make all test` to build and run automated tests
+To install, use `ninja install`, then execute
 
-    cmake -DCMAKE_INSTALL_PREFIX=/usr ..
-    make all test
-
-To install, use `make install`, then execute with `io.elementary.appcenter`
-
-    sudo make install
-    io.elementary.appcenter
+    sudo ninja install
+    apphive	

@@ -55,13 +55,13 @@ public class AppCenter.App : Granite.Application {
 
         program_name = _(Build.APP_NAME);
 
-        build_data_dir = Build.DATADIR;
-        build_pkg_data_dir = Build.PKGDATADIR;
-        build_release_name = Build.RELEASE_NAME;
+        //build_data_dir = Build.DATADIR;
+        //build_pkg_data_dir = Build.PKGDATADIR;
+        build_release_name = Build.PROJECT_NAME;
         build_version = Build.VERSION;
-        build_version_info = Build.VERSION_INFO;
+        //build_version_info = Build.VERSION_INFO;
 
-        app_launcher = Build.DESKTOP_FILE;
+        //app_launcher = Build.DESKTOP_FILE;
         add_main_option_entries (APPCENTER_OPTIONS);
 
         var quit_action = new SimpleAction ("quit", null);
@@ -82,6 +82,7 @@ public class AppCenter.App : Granite.Application {
         var client = AppCenterCore.Client.get_default ();
         client.operation_finished.connect (on_operation_finished);
         client.cache_update_failed.connect (on_cache_update_failed);
+        client.updates_available.connect (on_updates_available);
 
         if (AppInfo.get_default_for_uri_scheme ("appstream") == null) {
             var appinfo = new DesktopAppInfo (app_launcher);
@@ -241,6 +242,11 @@ public class AppCenter.App : Granite.Application {
                 return false;
             });
         }
+    }
+
+    public void on_updates_available () {
+        var client = AppCenterCore.Client.get_default ();
+        main_window.show_update_badge (client.updates_number);
     }
 
     private void on_operation_finished (AppCenterCore.Package package, AppCenterCore.Package.State operation, Error? error) {

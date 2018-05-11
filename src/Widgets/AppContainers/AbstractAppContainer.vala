@@ -144,7 +144,7 @@ namespace AppCenter {
             progress_bar.valign = Gtk.Align.CENTER;
             /* Request a width large enough for the longest text to stop width of
              * progress bar jumping around */
-            progress_bar.width_request = 350;
+            progress_bar.width_request = 250;
 
             cancel_button = new Gtk.Button.with_label (_("Cancel"));
             cancel_button.clicked.connect (() => action_cancelled ());
