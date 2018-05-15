@@ -36,7 +36,7 @@ namespace AppCenter {
         public MainWindow main_window { get; construct; }
         public Widgets.Banner newest_banner;
         public Gtk.Revealer switcher_revealer;
-        
+
         private Widgets.UpdatesGrid updates_header;
         private Gtk.Button update_all_button;
         private AppCenterCore.Client client;
@@ -49,7 +49,7 @@ namespace AppCenter {
             var houston = AppCenterCore.Houston.get_default ();
             /*client = AppCenterCore.Client.get_default ();
             updates_header = new Widgets.UpdatesGrid ();
-            
+
             client.updates_available.connect (() => {
 				if(client.updates_number != 0U) {
 					warning(client.updates_number.to_string ());
@@ -65,8 +65,8 @@ namespace AppCenter {
             switcher_revealer.set_transition_type (Gtk.RevealerTransitionType.SLIDE_DOWN);
             switcher_revealer.set_transition_duration (Widgets.Banner.TRANSITION_DURATION_MILLISECONDS);
             switcher_revealer.add (switcher);
-            
-            
+
+
             newest_banner = new Widgets.Banner (switcher);
             newest_banner.get_style_context ().add_class ("home");
             newest_banner.margin = 12;
@@ -120,7 +120,7 @@ namespace AppCenter {
 
             var grid = new Gtk.Grid ();
             grid.margin = 12;
-			
+
 			//grid.attach (updates_header, 0, 0, 1, 1);
             grid.attach (newest_banner, 0, 1, 1, 1);
             //grid.attach (switcher_revealer, 0, 1, 1, 1);
@@ -206,9 +206,9 @@ namespace AppCenter {
                     return null;
                 });
             });
-            
+
             new Thread<void*> ("update-header", () => {
-				
+
 				uint update_numbers = 0U;
 					uint64 update_real_size = 0ULL;
 					foreach (var package in get_packages ()) {
@@ -233,16 +233,16 @@ namespace AppCenter {
 
 				updates_header.show_all ();
 			});*/
-            
-            houston.get_app_ids ("/packages/list", (obj, res) => {
+
+      houston.get_app_ids ("/packages/list", (obj, res) => {
 				var updated_ids = houston.get_app_ids.end (res);
 				new Thread<void*> ("update-recent-carousel", () => {
 					var packages_for_carousel = new Gee.LinkedList<AppCenterCore.Package> ();
-					//Idle.add (() => {
+
 						//var updated_ids = houston.get_app_ids ("/packages/list");//, (obj, res) => {
 						//var updated_ids = houston.get_app_ids.end (res);
 						foreach (var package in updated_ids) {
-							
+
 							var candidate = package + ".desktop";
 							var candidate_package = AppCenterCore.Client.get_default ().get_package_for_component_id (candidate);
 
@@ -254,33 +254,23 @@ namespace AppCenter {
 							}
 						}
 						if (!packages_for_carousel.is_empty) {
-							foreach (var banner_package in packages_for_carousel) {
-								recently_updated_carousel.add_package (banner_package);
-							}
-							recently_updated_revealer.reveal_child = true;
-						}
-						//return false;
-					//});
+              /*Idle.add (() => {
+  							foreach (var banner_package in packages_for_carousel) {
+  								recently_updated_carousel.add_package (banner_package);
+  							}*/
+  							recently_updated_revealer.reveal_child = true;
+                //return false;
+  						//});
+            }
+                  return null;
+              });
+              //return null;
+              recently_updated_carousel.package_activated.connect (show_package);
+          });
 
-                    /*if (!packages_for_carousel.is_empty) {
-                        Idle.add (() => {
-                            foreach (var banner_package in packages_for_carousel) {
-                                recently_updated_carousel.add_package (banner_package);
-                            }
-                            recently_updated_revealer.reveal_child = true;
-                            return false;
-                        });
-                    }*/
-                    
-                    return null;
-                });
-                //return null;
-                recently_updated_carousel.package_activated.connect (show_package);
-            });
-            
             new Thread<void*> ("update-trending-carousel", () => {
                 var packages_for_carousel = new Gee.LinkedList<AppCenterCore.Package> ();
-                Idle.add (() => {
+                //Idle.add (() => {
                     var featured_snaps = AppCenterCore.SnapClient.get_default ().getFeaturedSnaps ();
 
                     featured_snaps.foreach ((snap) => {
@@ -289,17 +279,18 @@ namespace AppCenter {
                             if (package.state == AppCenterCore.Package.State.NOT_INSTALLED) {
                                 trending_carousel.add_package (package);
                             }
+                            trending_revealer.reveal_child = true;
                         }
                     });
 
-                    foreach (var trending_package in packages_for_carousel) {
+                  /*  foreach (var trending_package in packages_for_carousel) {
                         trending_carousel.add_package (trending_package);
                     }
                     trending_revealer.reveal_child = true;
                     return false;
                 });
 
-                /*if (!packages_for_carousel.is_empty) {
+                if (!trending_carousel.is_empty) {
                     Idle.add (() => {
                         foreach (var trending_package in packages_for_carousel) {
                             trending_carousel.add_package (trending_package);

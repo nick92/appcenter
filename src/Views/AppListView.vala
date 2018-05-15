@@ -109,7 +109,7 @@ namespace AppCenter.Views {
 
             if (!elementary_native) {
                 if (before == null || (before != null && before.get_package ().is_native)) {
-                    mark_row_non_curated (row);
+                    //mark_row_non_curated (row);
                 }
             }
         }

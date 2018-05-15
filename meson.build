@@ -6,6 +6,7 @@ project(
 gettext_name = meson.project_name()
 gnome = import('gnome')
 i18n = import('i18n')
+cc = meson.get_compiler('c')
 
 add_project_arguments(
     '-DGETTEXT_PACKAGE="@0@"'.format(gettext_name),
@@ -21,7 +22,7 @@ appstream = dependency ('appstream', version: '>=0.10.0')
 libsoup = dependency ('libsoup-2.4')
 json = dependency ('json-glib-1.0')
 snapd = dependency ('snapd-glib')
-
+m_dep = cc.find_library('m', required: false)
 dbus = dependency ('dbus-1')
 
 dependencies = [
@@ -32,7 +33,8 @@ dependencies = [
     appstream,
     libsoup,
     json,
-    snapd
+    snapd,
+    m_dep
 ]
 
 if get_option('libunity')

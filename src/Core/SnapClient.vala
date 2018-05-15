@@ -28,6 +28,21 @@ public class AppCenterCore.SnapClient : Object {
         }
     }
 
+    /** TODO -- possible future implemntation, but recieved error 
+    /**public GLib.Icon get_snap_icon (string name)
+    {
+      try{
+        warning (name);
+        var icon = client.get_icon_sync (name);
+        return new BytesIcon(icon.get_data());
+      }catch(Error error){
+        warning(error.message);
+        return null;
+      }
+      //var input_stream = new MemoryInputStream.from_bytes(icon.get_data());
+      //return new Gdk.Pixbuf.from_stream_at_scale (input_stream, 32, 32, true);
+    }*/
+
     public async bool update_snap_package(Package snap, Snapd.ProgressCallback cb, GLib.Cancellable cancellable){
         bool binstall = false;
 
@@ -56,7 +71,7 @@ public class AppCenterCore.SnapClient : Object {
 
     public async bool install_snap_package(Package snap, Snapd.ProgressCallback cb, GLib.Cancellable cancellable){
         bool binstall = false;
-        
+
         try{
             binstall = yield client.install2_async (Snapd.InstallFlags.CLASSIC, snap.get_name (), null, null, cb, cancellable);
         } catch (Error e) {
@@ -95,7 +110,7 @@ public class AppCenterCore.SnapClient : Object {
 
         return snaps;
     }
-    
+
     public GLib.GenericArray<weak Snapd.Snap> getRefreshablePackages() {
 
         GLib.GenericArray<weak Snapd.Snap> snaps = client.find_refreshable_sync ();

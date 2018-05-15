@@ -105,11 +105,12 @@ public class AppCenterCore.Client : Object {
       				update_snap_packages.add(snap);
       			});
 
-            snapdClient.getInstalledPackages().foreach ((snap) => {
+            /*snapdClient.getInstalledPackages().foreach ((snap) => {
                 var snap_package = convert_snap_to_component(snap);
+                snapdClient.get_snap_icon(snap.get_name());
                 var package = convert_to_package(snap);
                 package_list[package.get_name ()] = snap_package;
-            });
+            });*/
 
         } catch (Error e) {
             critical (e.message);
@@ -359,6 +360,14 @@ public class AppCenterCore.Client : Object {
             }
         }
 
+        snapdClient.getInstalledPackages().foreach ((snap) => {
+            var snap_package = convert_snap_to_component(snap);
+            if (snap_package != null) {
+              populate_package (snap_package, snap_package.find_package());
+              packages.add (snap_package);
+            }
+        });
+
         return packages;
     }
 
@@ -372,6 +381,12 @@ public class AppCenterCore.Client : Object {
                 packages.add (package);
             }
         }
+
+        snapdClient.getInstalledPackages().foreach ((snap) => {
+            var snap_package = convert_snap_to_component(snap);
+            populate_package (snap_package, snap_package.find_package());
+            packages.add (snap_package);
+        });
 
         return packages;
     }
@@ -687,10 +702,10 @@ public class AppCenterCore.Client : Object {
                 installed.add (pk_package);
             });
 
-            GLib.GenericArray<weak Snapd.Snap> snapResult = yield snapdClient.getInstalledPackagesAsync ();
+            /*GLib.GenericArray<weak Snapd.Snap> snapResult = yield snapdClient.getInstalledPackagesAsync ();
             snapResult.foreach ((snap) => {
                 installed.add (convert_to_package(snap));
-            });
+            });*/
 
         } catch (Error e) {
             critical (e.message);
@@ -712,10 +727,10 @@ public class AppCenterCore.Client : Object {
                 installed.add (pk_package);
             });
 
-            GLib.GenericArray<weak Snapd.Snap> snapResult = snapdClient.getInstalledPackages ();
+            /*GLib.GenericArray<weak Snapd.Snap> snapResult = snapdClient.getInstalledPackages ();
             snapResult.foreach ((snap) => {
                 installed.add (convert_to_package(snap));
-            });
+            });*/
 
         } catch (Error e) {
             critical (e.message);
@@ -776,8 +791,16 @@ public class AppCenterCore.Client : Object {
     {
         var icon = new AppStream.Icon ();
         icon.set_name (snap.get_name ());
-        icon.set_url (snap.get_icon ());
-        icon.set_kind (AppStream.IconKind.REMOTE);
+
+        if(snap.get_icon () != null) {
+          icon.set_url (snap.get_icon ());
+          icon.set_kind (AppStream.IconKind.REMOTE);
+        }
+        else {
+          // fix to set icon path as Snapd client get_icon returns error
+          icon.set_filename ("/snap/"+snap.get_name ()+"/current/usr/share/pixmaps/"+snap.get_name ()+".png");
+          icon.set_kind (AppStream.IconKind.LOCAL);
+        }
 
         var snap_component = new AppStream.Component ();
         snap_component.id = "%s%s".printf (snap.get_id (), Package.SNAP_ID_SUFFIX);
@@ -799,9 +822,12 @@ public class AppCenterCore.Client : Object {
 
         snap_component.add_icon (icon);
 
+        var pk_package = convert_to_package (snap);
+
         var package = new AppCenterCore.Package.addComponent (snap_component);
         package.set_title (snap.get_title ());
         package.latest_version = snap.version;
+        package.set_package (pk_package);
 
         foreach (var pkg in package_list.values) {
             if (pkg.component.id == snap_component.id) {

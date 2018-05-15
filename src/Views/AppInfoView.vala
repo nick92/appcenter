@@ -52,7 +52,7 @@ namespace AppCenter.Views {
             uninstall_button_context.add_class ("h4");
 
             var package_component = package.component;
-			
+
             screenshots = package_component.get_screenshots ();
 
             if (screenshots.length > 0) {
@@ -137,7 +137,7 @@ namespace AppCenter.Views {
 
             var bugtracker_url = package_component.get_url (AppStream.UrlKind.BUGTRACKER);
             if (bugtracker_url != null) {
-                var bugtracker_button = new UrlButton (_("Report a Problem"), bugtracker_url, "bug-symbolic");
+                var bugtracker_button = new UrlButton (_("Report a Problem"), bugtracker_url, "task-due-symbolic");
                 links_grid.add (bugtracker_button);
             }
 
@@ -154,13 +154,13 @@ namespace AppCenter.Views {
             content_grid.row_spacing = 24;
             content_grid.orientation = Gtk.Orientation.VERTICAL;
 
+            if (!package.is_os_updates) {
+                content_grid.add (package_summary);
+            }
+
             if (screenshots.length > 0) {
                 content_grid.add (screenshot_stack);
                 content_grid.add (screenshot_switcher);
-            }
-
-            if (!package.is_os_updates) {
-                content_grid.add (package_summary);
             }
 
             content_grid.add (app_description);
@@ -224,11 +224,11 @@ namespace AppCenter.Views {
             footer_grid.halign = Gtk.Align.CENTER;
             footer_grid.margin = 12;
             footer_grid.width_request = 800;
-			
+
             footer_grid.add (links_grid);
-            
-            var app_store_source = new UrlButton (_(package.is_snap ? _("Snap") : _("Debian")), "", "package-x-generic-symbolic");
-			footer_grid.add (app_store_source);
+
+            var app_store_source = new UrlButton (_(package.is_snap ? _("Snap") : _("Debian")), "https://snapcraft.io/"+package.get_name(), "package-x-generic-symbolic");
+			      footer_grid.add (app_store_source);
 
             var project_license = package.component.project_license;
             if (project_license != null) {
@@ -258,12 +258,12 @@ namespace AppCenter.Views {
                 var license_button = new UrlButton (_(project_license), license_url, "text-x-copying-symbolic");
                 footer_grid.add (license_button);
             }
-            
-            var rating_array = package.component.get_content_ratings ();
-            
+
+            /*var rating_array = package.component.get_content_ratings ();
+
             rating_array.foreach((comp) => {
-				warning(comp.get_kind ());
-			});
+      				warning(comp.get_kind ());
+      			});*/
 
             var grid = new Gtk.Grid ();
             grid.row_spacing = 12;

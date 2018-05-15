@@ -20,8 +20,7 @@
  */
 
 namespace AppCenter.Views {
-/** AppList for the Updates View. Sorts update_available first and shows headers.
-      * Does not show Uninstall Button **/
+/** AppList for the Updates View. Sorts update_available first and shows headers. **/
     public class AppListUpdateView : AbstractAppList {
         private Gtk.Button? update_all_button;
         private bool updating_all_apps = false;

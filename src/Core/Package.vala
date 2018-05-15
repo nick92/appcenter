@@ -51,6 +51,7 @@ public class AppCenterCore.Package : Object {
     public Gee.TreeSet<Pk.Package> installed_packages { public get; private set; }
     public GLib.Cancellable action_cancellable { public get; private set; }
     public State state { public get; public set; default = State.NOT_INSTALLED; }
+    private GLib.Icon snap_icon = null;
 
     public double progress {
         get {
@@ -275,6 +276,12 @@ public class AppCenterCore.Package : Object {
     }
 
     public void launch () throws Error {
+        if(is_snap)
+        {
+            Process.spawn_command_line_async("snap run " + get_name ());
+            return;
+        }
+
         if (app_info == null) {
             throw new PackageLaunchError.APP_INFO_NOT_FOUND ("AppInfo not found for package: %s".printf (get_name ()));
         }
@@ -437,6 +444,14 @@ public class AppCenterCore.Package : Object {
         return change_information.get_status_string ();
     }
 
+    public void set_snap_icon (GLib.Icon snapd_icon)
+    {
+      if (snapd_icon == null)
+        snap_icon = new ThemedIcon ("application-default-icon");
+      else
+        snap_icon = snapd_icon;
+    }
+
     public GLib.Icon get_icon (uint size = 32) {
         GLib.Icon? icon = null;
         uint current_size = 0;
@@ -457,6 +472,14 @@ public class AppCenterCore.Package : Object {
                     break;
                 case AppStream.IconKind.CACHED:
                 case AppStream.IconKind.LOCAL:
+                    if(is_snap) {
+                      var file = File.new_for_path (_icon.get_filename ());
+                      icon = new FileIcon (file);
+                      current_size = _icon.get_width ();
+
+                      if(!file.query_exists ())
+                        icon = new ThemedIcon (_icon.get_name ());
+                    }
                     if (_icon.get_width () > current_size && current_size < size) {
                         var file = File.new_for_path (_icon.get_filename ());
                         icon = new FileIcon (file);
@@ -549,13 +572,17 @@ public class AppCenterCore.Package : Object {
     }
 
     public bool get_can_launch () {
+
+        if(is_snap)
+          return true;
+
         if (app_info_retrieved) {
             return app_info != null;
         }
 
         //string? desktop_id = component.get_launchable ().get_entries(AppStream.LaunchableKind.DESKTOP_ID)[0];
         string? desktop_id = component.get_desktop_id ();
-        
+
         if (desktop_id != null) {
             app_info = new DesktopAppInfo (desktop_id);
         }
@@ -616,9 +643,18 @@ public class AppCenterCore.Package : Object {
         return null;
     }
 
+    public void set_package (Pk.Package package)
+    {
+      pk_package = package;
+    }
+
     public Pk.Package? find_package () {
-        if (component.id == OS_UPDATES_ID || is_local || is_snap) {
+        if (component.id == OS_UPDATES_ID || is_local) {
             return null;
+        }
+
+        if(is_snap && pk_package != null){
+          return pk_package;
         }
 
         if (pk_package != null) {
