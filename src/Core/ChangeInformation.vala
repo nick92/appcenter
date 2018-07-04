@@ -27,7 +27,6 @@ public class AppCenterCore.ChangeInformation : Object {
     public bool can_cancel { public get; private set; default=true; }
     public Pk.Status status { public get; private set; }
     public double progress { public get; private set; }
-    //private double snap_progress;
     private int current_progress;
     private int last_progress;
     private Pk.Status current_status;
@@ -217,10 +216,8 @@ public class AppCenterCore.ChangeInformation : Object {
                 change.get_tasks().foreach ((task) => {
             		    progress_done += task.get_progress_done ();
             		    progress_total += task.get_progress_total ();
-                    warning("su " + task.get_summary());
                 });
                 this.progress = (progress_done / progress_total);
-                warning((progress_done / progress_total).to_string ());
                 progress_changed ();
             break;
             case "Abort":

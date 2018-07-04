@@ -105,12 +105,10 @@ public class AppCenterCore.Client : Object {
       				update_snap_packages.add(snap);
       			});
 
-            /*snapdClient.getInstalledPackages().foreach ((snap) => {
+            snapdClient.getInstalledPackages().foreach ((snap) => {
                 var snap_package = convert_snap_to_component(snap);
-                snapdClient.get_snap_icon(snap.get_name());
-                var package = convert_to_package(snap);
-                package_list[package.get_name ()] = snap_package;
-            });*/
+                package_list[snap_package.component.id] = snap_package;
+            });
 
         } catch (Error e) {
             critical (e.message);
@@ -830,7 +828,8 @@ public class AppCenterCore.Client : Object {
         package.set_package (pk_package);
 
         foreach (var pkg in package_list.values) {
-            if (pkg.component.id == snap_component.id) {
+            if (pkg.component.id == package.component.id) {
+              warning(pkg.component.id);
       				if(update_snap_packages.contains(snap))
       					package.set_status(Package.State.UPDATE_AVAILABLE);
       				else

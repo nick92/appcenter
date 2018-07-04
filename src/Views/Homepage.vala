@@ -250,14 +250,15 @@ namespace AppCenter {
 								candidate_package.update_state ();
 								if (candidate_package.state == AppCenterCore.Package.State.NOT_INSTALLED) {
 									packages_for_carousel.add (candidate_package);
+                  //recently_updated_carousel.add_package (candidate_package);
 								}
 							}
 						}
 						if (!packages_for_carousel.is_empty) {
-              /*Idle.add (() => {
+              //Idle.add (() => {
   							foreach (var banner_package in packages_for_carousel) {
   								recently_updated_carousel.add_package (banner_package);
-  							}*/
+  							}
   							recently_updated_revealer.reveal_child = true;
                 //return false;
   						//});

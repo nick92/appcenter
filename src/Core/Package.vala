@@ -312,6 +312,8 @@ public class AppCenterCore.Package : Object {
             } finally {
                 clean_up_package_operation (exit_status, after_success, after_fail);
             }
+
+            return (exit_status == Pk.Exit.SUCCESS);
         }
         else {
             prepare_package_operation (performing);
@@ -472,11 +474,16 @@ public class AppCenterCore.Package : Object {
                     break;
                 case AppStream.IconKind.CACHED:
                 case AppStream.IconKind.LOCAL:
-                    if(is_snap) {
+                    if (is_snap) {
                       var file = File.new_for_path (_icon.get_filename ());
+
+                      if(!file.query_exists ())
+                        file = File.new_for_path ("/snap/"+name+"/current/meta/"+name+".png");
+
                       icon = new FileIcon (file);
                       current_size = _icon.get_width ();
 
+                      // if no icon can be found in snap use theme  
                       if(!file.query_exists ())
                         icon = new ThemedIcon (_icon.get_name ());
                     }
