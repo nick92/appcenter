@@ -59,6 +59,11 @@ public class AppCenterCore.Package : Object {
         }
     }
 
+    public bool snap_installed {
+      get;
+      set;
+    }
+
     public bool installed {
         get {
 
@@ -71,7 +76,10 @@ public class AppCenterCore.Package : Object {
             }
 
             if (component.get_id () == SNAP_ID_SUFFIX) {
-                return true;
+              if(snap_installed)
+                  return true;
+              else
+                  return false;
             }
 
             Pk.Package? package = find_package ();
@@ -483,7 +491,7 @@ public class AppCenterCore.Package : Object {
                       icon = new FileIcon (file);
                       current_size = _icon.get_width ();
 
-                      // if no icon can be found in snap use theme  
+                      // if no icon can be found in snap use theme
                       if(!file.query_exists ())
                         icon = new ThemedIcon (_icon.get_name ());
                     }

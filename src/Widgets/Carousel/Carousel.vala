@@ -41,6 +41,13 @@ public class AppCenter.Widgets.Carousel : Gtk.FlowBox {
         show_all ();
     }
 
+    public void clear () {
+      this.get_children().foreach ((child) => {
+        var item = child as CarouselItem;
+        this.remove(item);
+      });
+    }
+
     private void on_child_activated (Gtk.FlowBoxChild child) {
         if (child is Widgets.CarouselItem) {
             var package = ((Widgets.CarouselItem)child).package;

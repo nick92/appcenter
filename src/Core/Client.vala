@@ -829,11 +829,13 @@ public class AppCenterCore.Client : Object {
 
         foreach (var pkg in package_list.values) {
             if (pkg.component.id == package.component.id) {
-              warning(pkg.component.id);
       				if(update_snap_packages.contains(snap))
       					package.set_status(Package.State.UPDATE_AVAILABLE);
       				else
       					package.set_status(Package.State.INSTALLED);
+            }
+            else {
+              package.snap_installed = false;
             }
         }
 
