@@ -1,14 +1,12 @@
 # AppHive
 
-**This application is currently in beta and so contains many bugs**
-
 A universal application manager for *buntu systems, supporting deb and snap packages. Based on [elementary AppCenter](https://github.com/elementary/appcenter)
 
 ![Screenshot](data/screenshot.png?raw=true)
 
 ## Packages
 
-Currently supports Deb and Snap packages
+Currently supports Debian and Snap packages
 
 ## Building, Testing, and Installation
 
