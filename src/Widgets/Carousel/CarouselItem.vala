@@ -39,21 +39,31 @@ public class AppCenter.Widgets.CarouselItem : Gtk.FlowBoxChild {
         category_label.xalign = 0;
         category_label.get_style_context ().add_class (Gtk.STYLE_CLASS_DIM_LABEL);
 
-        var installed_icon = new Gtk.Image.from_icon_name ("package-install", Gtk.IconSize.SMALL_TOOLBAR);
-        installed_icon.valign = Gtk.Align.START;
-        installed_icon.xalign = 0;
-        installed_icon.visible = false;
+        var install_button = new Gtk.Button ();
+        install_button.image = new Gtk.Image.from_icon_name ("package-install", Gtk.IconSize.SMALL_TOOLBAR);
+        install_button.valign = Gtk.Align.START;
+        install_button.halign = Gtk.Align.END;
+        install_button.get_style_context ().add_class (Gtk.STYLE_CLASS_FLAT);
+
+        var star_button = new Gtk.Button ();
+        star_button.image = new Gtk.Image.from_icon_name ("star-new-symbolic", Gtk.IconSize.SMALL_TOOLBAR);
+        star_button.valign = Gtk.Align.START;
+        star_button.halign = Gtk.Align.END;
+        star_button.get_style_context ().add_class (Gtk.STYLE_CLASS_FLAT);
         //icon.gicon = package.get_icon (64);
         //icon.pixel_size = 64;
 
         var grid = new Gtk.Grid ();
         grid.column_spacing = 12;
-        grid.row_spacing = 3;
-        grid.margin = 6;
+        grid.row_spacing = 6;
+        grid.margin = 10;
         grid.attach (icon, 0, 0, 1, 2);
         grid.attach (name_label, 1, 0, 1, 1);
-        //grid.attach (installed_icon, 1, 1, 1, 1);
+        //grid.attach (star_button, 2, 0, 1, 1);
         grid.attach (category_label, 1, 1, 1, 1);
+        //grid.attach (install_button, 2, 1, 1, 1);
+        //grid.attach (installed_icon, 1, 1, 1, 1);
+        //grid.attach (category_label, 1, 1, 1, 1);
 
 
         add (grid);

@@ -14,7 +14,7 @@ You'll need the following dependencies:
 * meson
 * gettext
 * libappstream-dev (>= 0.10)
-* [libsnapd-glib](https://github.com/snapcore/snapd-glib) (>=1.19) 
+* [libsnapd-glib-dev](https://github.com/snapcore/snapd-glib) (>=1.19) 
 * libgee-0.8-dev
 * libgranite-dev (>=0.5)
 * libgtk-3-dev

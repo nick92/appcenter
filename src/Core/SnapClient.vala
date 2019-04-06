@@ -133,22 +133,24 @@ public class AppCenterCore.SnapClient : Object {
     }
 
     public GLib.GenericArray<weak Snapd.Snap> getPackageByName(string searchWord = "") {
-		    try{
+        try{
             GLib.GenericArray<weak Snapd.Snap> snaps = client.find_sync (Snapd.FindFlags.NONE, searchWord, null, cancellable);
             return snaps;
         } catch (Snapd.Error e) {
             critical(e.message);
+            return null;
         }
 
         return null;
     }
 
     public GLib.GenericArray<weak Snapd.Snap> getSpecificPackageByName(string searchWord = "") {
-		    try{
+        try{
             GLib.GenericArray<weak Snapd.Snap> snaps = client.find_sync (Snapd.FindFlags.MATCH_NAME, searchWord, null, cancellable);
             return snaps;
         } catch (Snapd.Error e) {
             critical(e.message);
+            return null;
         }
 
         return null;

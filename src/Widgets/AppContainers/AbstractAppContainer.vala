@@ -41,6 +41,7 @@ namespace AppCenter {
         protected Gtk.Button action_button;
         protected Gtk.Button uninstall_button;
         protected Gtk.Button open_button;
+        protected Gtk.Button star_button;
 
         protected Gtk.Grid progress_grid;
         protected Gtk.ProgressBar progress_bar;
@@ -131,6 +132,10 @@ namespace AppCenter {
             open_button = new Gtk.Button.with_label (_("Open"));
             open_button.clicked.connect (launch_package_app);
 
+            star_button = new Gtk.Button.from_icon_name (_("star-new-symbolic"));
+            star_button.clicked.connect (launch_package_app);
+            star_button.get_style_context ().add_class (Gtk.STYLE_CLASS_FLAT);
+
             var button_grid = new Gtk.Grid ();
             button_grid.column_spacing = 6;
             button_grid.halign = Gtk.Align.END;
@@ -138,6 +143,7 @@ namespace AppCenter {
             button_grid.add (uninstall_button);
             button_grid.add (action_button);
             button_grid.add (open_button);
+            //button_grid.add (star_button);
 
             progress_bar = new Gtk.ProgressBar ();
             progress_bar.show_text = true;

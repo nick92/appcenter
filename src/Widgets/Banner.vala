@@ -17,13 +17,15 @@
  *
  * Authored by: Nathan Dyer <mail@nathandyer.me>
  */
-
+//@define-color banner_bg_color %s;
+//@define-color banner_fg_color #343844;
 const string BANNER_STYLE_CSS = """
-    @define-color banner_bg_color %s;
-    @define-color banner_fg_color %s;
+    @define-color banner_bg_color #4B4B4B;
 
     .banner {
         transition: all %ums ease-in-out;
+        color: #E7E8EB;
+        border: 0 none;
     }
 """;
 
@@ -39,11 +41,11 @@ namespace AppCenter.Widgets {
             public AppCenterCore.Package? package { get; construct; }
 
             construct {
-                column_spacing = 24;
+                column_spacing = 14;
                 halign = Gtk.Align.CENTER;
                 valign = Gtk.Align.CENTER;
-                margin_top = 34;
-                margin_bottom = 24;
+                margin_top = 14;
+                margin_bottom = 14;
 
                 bool has_package = package != null;
 
@@ -83,9 +85,9 @@ namespace AppCenter.Widgets {
                 description_label.xalign = 0;
 
                 var icon = new Gtk.Image ();
-                icon.pixel_size = 128;
+                icon.pixel_size = 80;
                 if (has_package) {
-                    icon.gicon = package.get_icon (128);
+                    icon.gicon = package.get_icon (80);
                 } else {
                     icon.icon_name = "system-software-install";
                 }
@@ -246,7 +248,7 @@ namespace AppCenter.Widgets {
         private void reload_css () {
             var provider = new Gtk.CssProvider ();
             try {
-                var colored_css = BANNER_STYLE_CSS.printf (background_color, foreground_color, stack.transition_duration);
+                var colored_css = BANNER_STYLE_CSS.printf (foreground_color, stack.transition_duration);
                 provider.load_from_data (colored_css, colored_css.length);
 
                 var context = get_style_context ();

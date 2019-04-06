@@ -95,7 +95,7 @@ public class AppCenterCore.Houston : Object {
 
             Idle.add (get_app_ids.callback);
         });
-		
+
         yield;
         return app_ids;
     }
