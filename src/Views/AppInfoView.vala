@@ -37,14 +37,14 @@ namespace AppCenter.Views {
         private Widgets.Switcher screenshot_switcher;
 
         public AppInfoView (AppCenterCore.Package package) {
-            Object (package: package);
+            Object (package: package,
+                    show_star: true);
         }
 
         construct {
             image.margin_top = 12;
             image.margin_start = 6;
             image.pixel_size = 60;
-
             //action_button.suggested_action = true;
 
             var uninstall_button_context = uninstall_button.get_style_context ();
@@ -302,6 +302,7 @@ namespace AppCenter.Views {
             }
 
             var scrolled = new Gtk.ScrolledWindow (null, null);
+            scrolled.get_style_context ().add_class ("window_view");
             scrolled.hscrollbar_policy = Gtk.PolicyType.NEVER;
             scrolled.expand = true;
             scrolled.add (grid);

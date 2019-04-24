@@ -58,6 +58,10 @@
 
 /* Sidebar */
 
+.sidebar {
+    background: mix(@banner_bg_color, @theme_unfocused_fg_color, 0.07);
+}
+
 .sidebar-row:selected {
     background: mix(@theme_bg_color, @theme_fg_color, 0.07);
 }
@@ -107,6 +111,19 @@
     font-size: 20px;
     font-weight: 200;
     padding: 10px;
+}
+
+window { 
+    background-color: rgba(0,0,0,0.4);
+    border: 0px none;
+}
+
+.view { 
+    background-color: rgba(0,0,0,0);
+}
+
+.window_view {
+    background-color: #fff;
 }
 /*
 .banner button,

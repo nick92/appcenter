@@ -30,6 +30,7 @@ namespace AppCenter {
 
     public abstract class AbstractAppContainer : Gtk.Grid {
         public AppCenterCore.Package package { get; construct set; }
+        public bool show_star { get; construct set; }
         protected bool show_uninstall { get; set; default = true; }
         protected bool show_open { get; set; default = true; }
 
@@ -133,8 +134,9 @@ namespace AppCenter {
             open_button.clicked.connect (launch_package_app);
 
             star_button = new Gtk.Button.from_icon_name (_("star-new-symbolic"));
+            star_button.set_tooltip_text (_("Star this app ..."));
             star_button.clicked.connect (launch_package_app);
-            star_button.get_style_context ().add_class (Gtk.STYLE_CLASS_FLAT);
+            //tar_button.get_style_context ().add_class (Gtk.STYLE_CLASS_FLAT);
 
             var button_grid = new Gtk.Grid ();
             button_grid.column_spacing = 6;
@@ -143,7 +145,9 @@ namespace AppCenter {
             button_grid.add (uninstall_button);
             button_grid.add (action_button);
             button_grid.add (open_button);
-            //button_grid.add (star_button);
+
+            if(show_star)
+                button_grid.add (star_button);
 
             progress_bar = new Gtk.ProgressBar ();
             progress_bar.show_text = true;

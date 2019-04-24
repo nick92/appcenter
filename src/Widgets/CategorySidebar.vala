@@ -21,17 +21,22 @@ public class AppCenter.CategorySidebar : Gtk.ScrolledWindow {
     public signal bool changed (int i);
 
     private Gtk.ListBox listbox;
+    static Gtk.CssProvider? previous_css_provider = null;
 
     construct {
+        get_style_context ().add_class("sidebar");
         listbox = new Gtk.ListBox ();
 
         var frame = new Gtk.Frame (null);
+        //frame.get_style_context ().add_class("sidebar_row");
         frame.add (listbox);
 
         add (frame);
         this.min_content_width = 250;
         vexpand = true;
         hexpand = true;
+
+        reload_css ();
 
         listbox.row_selected.connect ((row) => {
             changed (row.get_index ());
@@ -46,12 +51,31 @@ public class AppCenter.CategorySidebar : Gtk.ScrolledWindow {
         label.xalign = 0;
 
         var grid = new Gtk.Grid ();
-        grid.get_style_context ().add_class("sidebar-row");
         grid.margin = 10;
         grid.column_spacing = 10;
         grid.add (icon);
         grid.add (label);
 
         listbox.add (grid);
+    }
+
+    public void reload_css () {
+        var provider = new Gtk.CssProvider ();
+        try {
+            string color_primary = DEFAULT_BANNER_COLOR_PRIMARY;
+            string color_primary_text = DEFAULT_BANNER_COLOR_PRIMARY_TEXT;
+            
+            var colored_css = SIDEBAR_STYLE_CSS.printf (color_primary, color_primary_text);
+            provider.load_from_data (colored_css, colored_css.length);
+
+            if (previous_css_provider != null) {
+                Gtk.StyleContext.remove_provider_for_screen (Gdk.Screen.get_default (), previous_css_provider);
+            }
+
+            previous_css_provider = provider;
+            Gtk.StyleContext.add_provider_for_screen (Gdk.Screen.get_default (), provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION);
+        } catch (GLib.Error e) {
+            critical (e.message);
+        }
     }
 }

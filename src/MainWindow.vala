@@ -146,6 +146,8 @@ public class AppCenter.MainWindow : Gtk.ApplicationWindow {
         set_size_request (960, 440);
         title = _(Build.APP_NAME);
         window_position = Gtk.WindowPosition.CENTER;
+        set_visual (Gdk.Screen.get_default ().get_rgba_visual ());
+        app_paintable = true;
 
         return_button = new Gtk.Button ();
         return_button.no_show_all = true;

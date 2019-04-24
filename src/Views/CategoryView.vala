@@ -40,6 +40,7 @@ public class AppCenter.Views.CategoryView : View {
         //category_flow.valign = Gtk.Align.CENTER;
 
         category_scrolled = new Gtk.ScrolledWindow (null, null);
+        category_scrolled.get_style_context ().add_class ("window_view");
         category_scrolled.add (category_flow);
 
         add (category_scrolled);

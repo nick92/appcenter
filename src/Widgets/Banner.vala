@@ -29,6 +29,32 @@ const string BANNER_STYLE_CSS = """
     }
 """;
 
+const string SIDEBAR_STYLE_CSS = """
+    
+    .sidebar {
+        background-color: rgba(52, 56, 68, 0.9);
+        color: #E7E8EB;
+        border: 0 none;
+    }
+
+    .sidebar_row:hover {
+        background-color: #DBDBDB;
+        color: #343844;
+    }
+    .sidebar_row:active {
+        background-color: #DBDBDB;
+        color: #343844;
+    }
+    .sidebar_row {
+        background-color: #DBDBDB;
+        color: #343844;
+    }
+
+
+
+    
+""";
+
 const string DEFAULT_BANNER_COLOR_PRIMARY = "#43444F";
 const string DEFAULT_BANNER_COLOR_PRIMARY_TEXT = "white";
 const int MILLISECONDS_BETWEEN_BANNER_ITEMS = 5000;
