@@ -72,6 +72,26 @@ public class AppCenterCore.Houston : Object {
         //yield;
         return app_ids;
     }*/
+
+    public async void star_app_by_name (string endpoint, string app_name) {
+        var uri = HOUSTON_API_URL + endpoint;
+        warning ("Starring application name %s", app_name);
+
+        var message = new Soup.Message ("POST", uri + "?name=" + app_name.replace(".desktop", ""));
+        //message.request_headers.append ("Accepts", "application/vnd.api+json");
+        message.request_headers.append ("Content-Type", "application/x-www-form-urlencoded");
+        session.send_message (message);
+
+        Idle.add (star_app_by_name.callback);
+
+        var data = new StringBuilder ();
+        foreach (var c in message.response_body.data) {
+            data.append ("%c".printf (c));
+        }
+
+        warning(data.str);
+        yield;
+    } 
     
     public async string[] get_app_ids (string endpoint) {
         var uri = HOUSTON_API_URL + endpoint;

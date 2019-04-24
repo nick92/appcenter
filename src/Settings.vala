@@ -33,6 +33,7 @@ public class AppCenter.Settings : Granite.Services.Settings {
     public bool developer_mode { get; set; }
     public bool reset_paid_apps { get; set; }
     public string[] paid_apps { get; set; }
+    public string[] stared_apps { get; set; }
 
     private static Settings main_settings;
     public static unowned Settings get_default () {
@@ -46,6 +47,14 @@ public class AppCenter.Settings : Granite.Services.Settings {
             var apps_copy = paid_apps;
             apps_copy += id;
             paid_apps = apps_copy;
+        }
+    }
+
+    public void add_stared_app (string name) {
+        if (!(name in stared_apps)) {
+            var apps_copy = stared_apps;
+            apps_copy += name;
+            stared_apps = apps_copy;
         }
     }
 

@@ -35,5 +35,10 @@
       <summary>List of paid-for applications</summary>
       <description>A list of appstream IDs which have been paid for</description>
     </key>
+    <key type="as" name="stared-apps">
+      <default>[]</default>
+      <summary>List of applications stared by the user</summary>
+      <description>A list of appstream IDs which have been stared</description>
+    </key>
   </schema>
 </schemalist>

@@ -33,6 +33,7 @@ namespace AppCenter {
         public bool show_star { get; construct set; }
         protected bool show_uninstall { get; set; default = true; }
         protected bool show_open { get; set; default = true; }
+        private AppCenterCore.Houston houston;
 
         protected Gtk.Image image;
         protected Gtk.Label package_name;
@@ -102,6 +103,7 @@ namespace AppCenter {
 
         construct {
             image = new Gtk.Image ();
+            houston = AppCenterCore.Houston.get_default ();
 
             settings = Settings.get_default ();
 
@@ -135,7 +137,12 @@ namespace AppCenter {
 
             star_button = new Gtk.Button.from_icon_name (_("star-new-symbolic"));
             star_button.set_tooltip_text (_("Star this app ..."));
-            star_button.clicked.connect (launch_package_app);
+            star_button.clicked.connect (star_package_app);
+
+            if (package.component.get_id () in settings.stared_apps) {
+                star_button.sensitive = false;
+                star_button.set_tooltip_text (_("Already Stared"));
+            }
             //tar_button.get_style_context ().add_class (Gtk.STYLE_CLASS_FLAT);
 
             var button_grid = new Gtk.Grid ();
@@ -286,6 +293,17 @@ namespace AppCenter {
                 package.launch ();
             } catch (Error e) {
                 warning ("Failed to launch %s: %s".printf (package.get_name (), e.message));
+            }
+        }
+
+        private async void star_package_app () {
+            try {
+                yield houston.star_app_by_name ("/packages/appstar", package.component.get_id ());
+
+                settings.add_stared_app (package.component.get_id ());
+                star_button.sensitive = false;
+            } catch (Error e) {
+                warning(e.message);
             }
         }
 
