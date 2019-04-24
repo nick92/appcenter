@@ -17,7 +17,8 @@
 */
 
 public class AppCenterCore.Houston : Object {
-    private const string HOUSTON_API_URL = "http://api.enso-os.site";
+    //private const string HOUSTON_API_URL = "http://api.enso-os.site";
+    private const string HOUSTON_API_URL = "https://nick92-appstar.herokuapp.com";
 
     private Soup.Session session;
 
@@ -86,7 +87,7 @@ public class AppCenterCore.Houston : Object {
                     var data = res.get_array_member ("data");
 
                     foreach (var id in data.get_elements ()) {
-                        app_ids += ((string) id.get_value ());
+                        app_ids += id.get_object ().get_string_member("Appname");
                     }
                 }
             } catch (Error e) {
