@@ -149,7 +149,7 @@ public class AppCenterCore.SnapClient : Object {
             GLib.GenericArray<weak Snapd.Snap> snaps = client.find_sync (Snapd.FindFlags.MATCH_NAME, searchWord, null, cancellable);
             return snaps;
         } catch (Snapd.Error e) {
-            critical(e.message);
+            critical("Error on Snap: " + searchWord + " Message: "+e.message);
             return null;
         }
 

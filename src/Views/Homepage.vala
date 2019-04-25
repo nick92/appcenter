@@ -399,6 +399,7 @@ namespace AppCenter {
 
           if (!packages_for_carousel.is_empty) {
               packages_for_carousel.foreach((banner_package) => {
+                warning(banner_package.get_name ());
                 multimedia_carousel.add_package (banner_package);
                 return true;
               });
@@ -407,7 +408,7 @@ namespace AppCenter {
           multimedia_carousel.package_activated.connect (show_package);
 
           var games_update_ids = yield houston.get_app_ids ("/packages/games");//, (obj, res) => {
-            multimedia_carousel.clear();
+            games_carousel.clear();
             candidate_package = null;
             packages_for_carousel = new Gee.LinkedList<AppCenterCore.Package> ();
             foreach (var package in games_update_ids) {
