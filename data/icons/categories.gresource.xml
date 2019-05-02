@@ -2,7 +2,6 @@
 <gresources>
   <gresource prefix="/io/elementary/appcenter/icons">
     <file alias="text-x-copying-symbolic.svg" compressed="true" preprocess="xml-stripblanks">text-x-copying-symbolic.svg</file>
-    <file alias="apphive.svg" compressed="true" preprocess="xml-stripblanks">apphive.svg</file>
-	<file alias="panther-icon-index.svg" compressed="true" preprocess="xml-stripblanks">panther-icon-index.svg</file>
+    <file alias="panther-icon-index.svg" compressed="true" preprocess="xml-stripblanks">panther-icon-index.svg</file>
   </gresource>
 </gresources>

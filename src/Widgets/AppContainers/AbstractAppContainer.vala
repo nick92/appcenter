@@ -298,9 +298,17 @@ namespace AppCenter {
 
         private async void star_package_app () {
             try {
-                yield houston.star_app_by_name ("/packages/appstar", package.component.get_id ());
+                if(package.is_snap){
+                    var id = package.get_name ().replace(".snap", "");
+                    yield houston.star_app_by_name ("/packages/appstar", id);
+                    settings.add_stared_app (id);
+                }
+                else {
+                    var id = package.component.get_id ().replace(".desktop","");
+                    yield houston.star_app_by_name ("/packages/appstar", id);
+                    settings.add_stared_app (id);
+                }
 
-                settings.add_stared_app (package.component.get_id ());
                 star_button.sensitive = false;
             } catch (Error e) {
                 warning(e.message);

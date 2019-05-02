@@ -77,7 +77,7 @@ public class AppCenterCore.Houston : Object {
         var uri = HOUSTON_API_URL + endpoint;
         warning ("Starring application name %s", app_name);
 
-        var message = new Soup.Message ("POST", uri + "?name=" + app_name.replace(".desktop", ""));
+        var message = new Soup.Message ("POST", uri + "?name=" + app_name);
         //message.request_headers.append ("Accepts", "application/vnd.api+json");
         message.request_headers.append ("Content-Type", "application/x-www-form-urlencoded");
         session.send_message (message);
