@@ -399,7 +399,6 @@ namespace AppCenter {
 
           if (!packages_for_carousel.is_empty) {
               packages_for_carousel.foreach((banner_package) => {
-                warning(banner_package.get_name ());
                 multimedia_carousel.add_package (banner_package);
                 return true;
               });
