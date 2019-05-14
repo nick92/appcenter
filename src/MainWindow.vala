@@ -19,8 +19,20 @@ public class AppCenter.MainWindow : Gtk.ApplicationWindow {
         set {
             if (value) {
                 spinner.start ();
+                set_widget_visibility (current_progress_button, true);
             } else {
                 spinner.stop ();
+                set_widget_visibility (current_progress_button, false);
+            }
+        }
+    }
+
+    public string working_title {
+        set {
+            if (value != "") {
+                current_progress_button.label = value;
+            } else {
+                current_progress_button.label = "Working ...";
             }
         }
     }
@@ -34,6 +46,9 @@ public class AppCenter.MainWindow : Gtk.ApplicationWindow {
     private Gtk.Stack stack;
     private Gtk.SearchEntry search_entry;
     private Gtk.Spinner spinner;
+
+    private Gtk.ToggleButton current_progress_button;
+    private Gtk.Popover current_progress_popover;
     private Homepage homepage;
     private Views.SearchView search_view;
     private Gtk.Button return_button;
@@ -193,6 +208,20 @@ public class AppCenter.MainWindow : Gtk.ApplicationWindow {
 
         spinner = new Gtk.Spinner ();
 
+        current_progress_button = new Gtk.ToggleButton ();
+
+        current_progress_popover = new Gtk.Popover (current_progress_button);
+        current_progress_popover.set_default_widget (search_entry);
+
+        current_progress_button.toggled.connect (() => {
+            if(current_progress_button.get_active ()) 
+                current_progress_popover.popup ();
+            else
+                current_progress_popover.popdown ();
+        });
+
+        set_widget_visibility (current_progress_button, false);
+
         /* HeaderBar */
         headerbar = new Gtk.HeaderBar ();
         headerbar.show_close_button = true;
@@ -200,6 +229,7 @@ public class AppCenter.MainWindow : Gtk.ApplicationWindow {
         headerbar.pack_start (return_button);
         headerbar.pack_end (search_entry);
         headerbar.pack_end (spinner);
+        headerbar.pack_end (current_progress_button);
 
         set_titlebar (headerbar);
 

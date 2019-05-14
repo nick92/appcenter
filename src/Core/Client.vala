@@ -14,6 +14,12 @@
 * with this program. If not, see http://www.gnu.org/licenses/.
 */
 
+public class AppCenterCore.Tasks {
+    public uint id { get; set; }
+    public string title { get; set; }
+    public uint progress { get; set; }
+}
+
 public class AppCenterCore.Client : Object {
     public signal void operation_finished (Package package, Package.State operation, Error? error);
     public signal void cache_update_failed (Error error);
@@ -37,6 +43,8 @@ public class AppCenterCore.Client : Object {
             last_action = new DateTime.now_local ();
         }
     }
+
+    private List<Tasks> _task_list = new List<Tasks> ();
 
     public bool updating_cache { public get; private set; default = false; }
 
@@ -183,6 +191,12 @@ public class AppCenterCore.Client : Object {
         string[] packages_ids = {};
         foreach (var pkg_name in package.component.get_pkgnames ()) {
             packages_ids += pkg_name;
+            var task = new Tasks ();
+            task.id = task_count;
+            task.title = pkg_name;
+            task.progress = 0;
+
+            _task_list.append (task);
         }
 
         packages_ids += null;
