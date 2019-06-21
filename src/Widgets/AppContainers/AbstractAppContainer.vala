@@ -241,6 +241,7 @@ namespace AppCenter {
                     action_button.label = _("Remove");
 
                     set_widget_visibility (uninstall_button, show_uninstall && !is_os_updates);
+                    set_widget_visibility (star_button, !is_os_updates);
                     set_widget_visibility (action_button, false);
                     set_widget_visibility (open_button, show_open && package.get_can_launch ());
                     set_widget_visibility (progress_grid, false);
@@ -250,6 +251,7 @@ namespace AppCenter {
                     action_button.label = _("Update");
 
                     set_widget_visibility (uninstall_button, show_uninstall && !is_os_updates);
+                    set_widget_visibility (star_button, !is_os_updates);
                     set_widget_visibility (action_button, true);
                     set_widget_visibility (open_button, false);
                     set_widget_visibility (progress_grid, false);
