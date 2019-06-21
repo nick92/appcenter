@@ -1,4 +1,5 @@
 // -*- Mode: vala; indent-tabs-mode: nil; tab-width: 4 -*-
+
 /*-
  * Copyright (c) 2017 elementary LLC. (https://elementary.io)
  *
@@ -19,81 +20,101 @@
  */
 
 public class AppCenterCore.UpdateManager : Object {
-    public bool restart_required { public get; private set; default = false; }
-    public string[] fake_packages { get; set; }
+   public bool restart_required { public get; private set; default = false; }
+   public string[] fake_packages { get; set; }
 
-    private const string FAKE_PACKAGE_ID = "%s;fake.version;amd64;installed:xenial-main";
-    private const string RESTART_REQUIRED_FILE = "/var/run/reboot-required";
+   private const string FAKE_PACKAGE_ID       = "%s;fake.version;amd64;installed:xenial-main";
+   private const string RESTART_REQUIRED_FILE = "/var/run/reboot-required";
 
-    private File restart_file;
+   private File restart_file;
 
-    construct {
-        restart_file = File.new_for_path (RESTART_REQUIRED_FILE);
-    }
+   construct {
+      restart_file = File.new_for_path(RESTART_REQUIRED_FILE);
+   }
 
-    private UpdateManager () {
+   private UpdateManager()
+   {
+   }
 
-    }
+   public async Pk.Results get_updates(Cancellable ? cancellable) throws Error
+   {
+      var client = AppCenterCore.Client.get_pk_client();
 
-    public async Pk.Results get_updates (Cancellable? cancellable) throws Error {
-        var client = AppCenterCore.Client.get_pk_client ();
-        try {
-            Pk.Results update_results = yield client.get_updates_async (0, cancellable, (t, p) => { });
+      try {
+         Pk.Results update_results = yield client.get_updates_async(0, cancellable, (t, p) => { });
 
-            if (fake_packages.length > 0) {
-                foreach (string name in fake_packages) {
-                    var package = new Pk.Package ();
-                    if (package.set_id (FAKE_PACKAGE_ID.printf (name))) {
-                        update_results.add_package (package);
-                    } else {
-                        warning ("Could not add a fake package '%s' to the update list".printf (name));
-                    }
-                }
-
-                fake_packages = {};
+         if (fake_packages.length > 0)
+         {
+            foreach (string name in fake_packages)
+            {
+               var package = new Pk.Package();
+               if (package.set_id(FAKE_PACKAGE_ID.printf(name)))
+               {
+                  update_results.add_package(package);
+               }
+               else
+               {
+                  warning("Could not add a fake package '%s' to the update list".printf(name));
+               }
             }
 
-            string[] packages_array = {};
-            update_results.get_package_array ().foreach ((pk_package) => {
-                packages_array += pk_package.get_id ();
-            });
+            fake_packages = {};
+         }
 
-            if (packages_array.length > 0) {
-                packages_array += null;
+         string[] packages_array = {};
+         update_results.get_package_array().foreach ((pk_package) => {
+            packages_array += pk_package.get_id();
+         })
+         {
+            ;
+         }
 
-                Pk.Results details_results = yield client.get_details_async (packages_array, cancellable, (t, p) => { });
+         if (packages_array.length > 0)
+         {
+            packages_array += null;
 
-                details_results.get_details_array ().foreach ((details) => {
-                    update_results.add_details (details);
-                });
+            Pk.Results details_results = yield client.get_details_async(packages_array, cancellable, (t, p) => { });
+
+            details_results.get_details_array().foreach ((details) => {
+               update_results.add_details(details);
+            })
+            {
+               ;
             }
+         }
 
-            return update_results;
-        } catch (Error e) {
-            throw e;
-        }
-    }
+         return(update_results);
+      } catch (Error e) {
+         throw e;
+      }
+   }
 
-    public void update_restart_state () {
-        if (restart_file.query_exists ()) {
-            if (!restart_required) {
-                string title = _("Restart Required");
-                string body = _("Please restart your system to finalize updates");
-                var notification = new Notification (title);
-                notification.set_body (body);
-                notification.set_icon (new ThemedIcon ("system-software-install"));
-                notification.set_priority (NotificationPriority.URGENT);
-                notification.set_default_action ("app.open-application");
-            }
+   public void update_restart_state()
+   {
+      if (restart_file.query_exists())
+      {
+         if (!restart_required)
+         {
+            string title        = _("Restart Required");
+            string body         = _("Please restart your system to finalize updates");
+            var    notification = new Notification(title);
+            notification.set_body(body);
+            notification.set_icon(new ThemedIcon("system-software-install"));
+            notification.set_priority(NotificationPriority.URGENT);
+            notification.set_default_action("app.open-application");
+         }
 
-            restart_required = true;
-        } else if (restart_required) {
-            restart_required = false;
-        }
-    }
+         restart_required = true;
+      }
+      else if (restart_required)
+      {
+         restart_required = false;
+      }
+   }
 
-    private static GLib.Once<UpdateManager> instance;
-    public static unowned UpdateManager get_default () {
-        return instance.once (() => { return new UpdateManager (); });
-    }
+   private static GLib.Once <UpdateManager> instance;
+   public static unowned UpdateManager get_default()
+   {
+      return(instance.once(() => { return new UpdateManager(); }));
+   }
 }
