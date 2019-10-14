@@ -227,6 +227,8 @@ public class AppCenter.MainWindow : Gtk.ApplicationWindow {
         stack.add (network_view);
 
         add (stack);
+
+        homepage.page_loaded.connect (() => homepage_loaded ());
     }
 
     public override bool delete_event (Gdk.EventAny event) {
