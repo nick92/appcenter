@@ -47,6 +47,7 @@ public class AppCenter.Views.SearchView : View {
             if (previous_package != null) {
                 show_package (previous_package);
             } else {
+                transition_type = Gtk.StackTransitionType.SLIDE_LEFT_RIGHT;
                 set_visible_child (app_list_view);
                 viewing_package = false;
 
@@ -62,14 +63,20 @@ public class AppCenter.Views.SearchView : View {
         }
     }
 
-    public void search (string search_term, AppStream.Category? category) {
+    public void search (string search_term, AppStream.Category? category, bool mimetype = false) {
         current_search_term = search_term;
         current_category = category;
 
         app_list_view.clear ();
         unowned Client client = Client.get_default ();
-        var found_apps = client.search_applications (current_search_term, current_category);
-        app_list_view.add_packages (found_apps);
+
+        if (mimetype) {
+            var found_apps = client.search_applications_mime (current_search_term);
+            app_list_view.add_packages (found_apps);
+        } else {
+            var found_apps = client.search_applications (current_search_term, current_category);
+            app_list_view.add_packages (found_apps);
+        }
 
         if (current_category != null) {
             subview_entered (_("Search Apps"), true, current_category.name);

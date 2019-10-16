@@ -1,6 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <gresources>
   <gresource prefix="/io/elementary/appcenter/icons">
+    <file alias="applications-accessibility-symbolic.svg" compressed="true" preprocess="xml-stripblanks">applications-accessibility-symbolic.svg</file>
+    <file alias="applications-audio-symbolic.svg" compressed="true" preprocess="xml-stripblanks">applications-audio-symbolic.svg</file>
+    <file alias="applications-games-symbolic.svg" compressed="true" preprocess="xml-stripblanks">applications-games-symbolic.svg</file>
+    <file alias="applications-office-symbolic.svg" compressed="true" preprocess="xml-stripblanks">applications-office-symbolic.svg</file>
+    <file alias="applications-video-rtl-symbolic.svg" compressed="true" preprocess="xml-stripblanks">applications-video-rtl-symbolic.svg</file>
+    <file alias="applications-video-symbolic-rtl.svg" compressed="true" preprocess="xml-stripblanks">applications-video-rtl-symbolic.svg</file>
+    <file alias="applications-video-symbolic.svg" compressed="true" preprocess="xml-stripblanks">applications-video-symbolic.svg</file>
+    <file alias="online-account-facebook.svg" compressed="true" preprocess="xml-stripblanks">online-account-facebook.svg</file>
+    <file alias="online-account-reddit.svg" compressed="true" preprocess="xml-stripblanks">online-account-reddit.svg</file>
+    <file alias="online-account-tumblr.svg" compressed="true" preprocess="xml-stripblanks">online-account-tumblr.svg</file>
+    <file alias="online-account-twitter.svg" compressed="true" preprocess="xml-stripblanks">online-account-twitter.svg</file>
+    <file alias="online-account-telegram.svg" compressed="true" preprocess="xml-stripblanks">online-account-telegram.svg</file>
     <file alias="text-x-copying-symbolic.svg" compressed="true" preprocess="xml-stripblanks">text-x-copying-symbolic.svg</file>
     <file alias="panther-icon-index.svg" compressed="true" preprocess="xml-stripblanks">panther-icon-index.svg</file>
   </gresource>

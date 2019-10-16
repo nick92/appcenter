@@ -1,6 +1,6 @@
 // -*- Mode: vala; indent-tabs-mode: nil; tab-width: 4 -*-
 /*-
-* Copyright (c) 2012-2017 elementary LLC (https://elementary.io)
+* Copyright (c) 2012–2018 elementary, Inc. (https://elementary.io)
 *
 * This program is free software; you can redistribute it and/or
 * modify it under the terms of the GNU General Public
@@ -21,19 +21,9 @@
 */
 
 public class AppCenter.Settings : Granite.Services.Settings {
-    public enum WindowState {
-        NORMAL,
-        MAXIMIZED,
-        FULLSCREEN
-    }
-
-    public int window_width { get; set; }
-    public int window_height { get; set; }
-    public WindowState window_state { get; set; }
     public bool developer_mode { get; set; }
-    public bool reset_paid_apps { get; set; }
     public string[] paid_apps { get; set; }
-    public string[] stared_apps { get; set; }
+    public bool content_warning { get; set; }
 
     private static Settings main_settings;
     public static unowned Settings get_default () {
@@ -50,15 +40,7 @@ public class AppCenter.Settings : Granite.Services.Settings {
         }
     }
 
-    public void add_stared_app (string name) {
-        if (!(name in stared_apps)) {
-            var apps_copy = stared_apps;
-            apps_copy += name;
-            stared_apps = apps_copy;
-        }
-    }
-
-    private Settings ()  {
+    private Settings () {
         base ("io.elementary.appcenter.settings");
     }
 }

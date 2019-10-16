@@ -26,45 +26,26 @@ public class AppCenter.Widgets.CarouselItem : Gtk.FlowBoxChild {
 
     construct {
         var icon = new Gtk.Image ();
-        icon.gicon = package.get_icon (64);
+        icon.gicon = package.get_icon (64, get_scale_factor ());
         icon.pixel_size = 64;
 
-        var name_label = new Gtk.Label (package.get_title ());
+        var name_label = new Gtk.Label (package.get_name ());
         name_label.valign = Gtk.Align.END;
         name_label.xalign = 0;
-        name_label.get_style_context ().add_class ("h3");
+        name_label.get_style_context ().add_class (Granite.STYLE_CLASS_H3_LABEL);
 
-        var category_label = new Gtk.Label (package.author_title);
+        var category_label = new Gtk.Label (package.component.developer_name);
         category_label.valign = Gtk.Align.START;
         category_label.xalign = 0;
         category_label.get_style_context ().add_class (Gtk.STYLE_CLASS_DIM_LABEL);
 
-        var install_button = new Gtk.Button ();
-        install_button.image = new Gtk.Image.from_icon_name ("package-install", Gtk.IconSize.SMALL_TOOLBAR);
-        install_button.valign = Gtk.Align.START;
-        install_button.halign = Gtk.Align.END;
-        install_button.get_style_context ().add_class (Gtk.STYLE_CLASS_FLAT);
-
-        var star_button = new Gtk.Button ();
-        star_button.image = new Gtk.Image.from_icon_name ("star-new-symbolic", Gtk.IconSize.SMALL_TOOLBAR);
-        star_button.valign = Gtk.Align.START;
-        star_button.halign = Gtk.Align.END;
-        star_button.get_style_context ().add_class (Gtk.STYLE_CLASS_FLAT);
-        //icon.gicon = package.get_icon (64);
-        //icon.pixel_size = 64;
-
         var grid = new Gtk.Grid ();
         grid.column_spacing = 12;
-        grid.row_spacing = 6;
-        grid.margin = 10;
+        grid.row_spacing = 3;
+        grid.margin = 6;
         grid.attach (icon, 0, 0, 1, 2);
         grid.attach (name_label, 1, 0, 1, 1);
-        //grid.attach (star_button, 2, 0, 1, 1);
         grid.attach (category_label, 1, 1, 1, 1);
-        //grid.attach (install_button, 2, 1, 1, 1);
-        //grid.attach (installed_icon, 1, 1, 1, 1);
-        //grid.attach (category_label, 1, 1, 1, 1);
-
 
         add (grid);
     }

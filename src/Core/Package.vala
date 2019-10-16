@@ -1,6 +1,6 @@
 // -*- Mode: vala; indent-tabs-mode: nil; tab-width: 4 -*-
 /*-
- * Copyright (c) 2014-2016 elementary LLC. (https://elementary.io)
+ * Copyright (c) 2014–2018 elementary, Inc. (https://elementary.io)
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,13 +23,47 @@ public errordomain PackageLaunchError {
     APP_INFO_NOT_FOUND
 }
 
+public errordomain PackageUninstallError {
+    APP_STATE_NOT_INSTALLED
+}
+
+public class AppCenterCore.PackageDetails : Object {
+    public string? name { get; set; }
+    public string? description { get; set; }
+    public string? summary { get; set; }
+    public string? version { get; set; }
+}
+
 public class AppCenterCore.Package : Object {
-    public const string APPCENTER_PACKAGE_ORIGIN = "appcenter-xenial-main";
-    private const string ELEMENTARY_STABLE_PACKAGE_ORIGIN = "stable-xenial-main";
-    private const string ELEMENTARY_DAILY_PACKAGE_ORIGIN = "daily-xenial-main";
+    public const string APPCENTER_PACKAGE_ORIGIN = "appcenter-bionic-main";
+    private const string ELEMENTARY_STABLE_PACKAGE_ORIGIN = "stable-bionic-main";
+    private const string ELEMENTARY_DAILY_PACKAGE_ORIGIN = "daily-bionic-main";
+
+    /* Note: These are just a stopgap, and are not a replacement for a more
+     * fleshed out parental control system. We assume any of these "moderate"
+     * or above is considered explicit for our naive warning.
+     *
+     * See https://hughsie.github.io/oars/generate.html for ratings.
+     */
+    private const string[] EXPLICIT_TAGS = {
+        "violence-realistic",
+        "violence-bloodshed",
+        "violence-sexual",
+        "drugs-narcotics",
+        "sex-nudity",
+        "sex-themes",
+        "sex-prostitution",
+        "language-profanity",
+        "language-humor",
+        "language-discrimination"
+    };
 
     public signal void changing (bool is_changing);
-    public signal void info_changed (Pk.Status status);
+    /**
+     * This signal is likely to be fired from a non-main thread. Ensure any UI
+     * logic driven from this runs on the GTK thread
+     */
+    public signal void info_changed (ChangeInformation.Status status);
 
     public enum State {
         NOT_INSTALLED,
@@ -41,17 +75,15 @@ public class AppCenterCore.Package : Object {
     }
 
     public const string OS_UPDATES_ID = "xxx-os-updates";
-    public const string SNAP_ID_SUFFIX = ".snap";
     public const string LOCAL_ID_SUFFIX = ".appcenter-local";
     public const string DEFAULT_PRICE_DOLLARS = "1";
 
-    public AppStream.Component component { get; construct; }
-    public Snapd.Snap snap { get; construct; }
+    public AppStream.Component component { get; protected set; }
     public ChangeInformation change_information { public get; private set; }
-    public Gee.TreeSet<Pk.Package> installed_packages { public get; private set; }
     public GLib.Cancellable action_cancellable { public get; private set; }
-    public State state { public get; public set; default = State.NOT_INSTALLED; }
-    private GLib.Icon snap_icon = null;
+    public State state { public get; private set; default = State.NOT_INSTALLED; }
+
+    public Backend backend { public get; construct; }
 
     public double progress {
         get {
@@ -59,15 +91,10 @@ public class AppCenterCore.Package : Object {
         }
     }
 
-    public bool snap_installed {
-      get;
-      set;
-    }
-
+    private bool installed_cached;
     public bool installed {
         get {
-
-            if (!installed_packages.is_empty) {
+            if (installed_cached) {
                 return true;
             }
 
@@ -75,25 +102,67 @@ public class AppCenterCore.Package : Object {
                 return true;
             }
 
-            if (component.get_id () == SNAP_ID_SUFFIX) {
-              if(snap_installed)
-                  return true;
-              else
-                  return false;
-            }
-
-            Pk.Package? package = find_package ();
-            if (package != null && package.info == Pk.Info.INSTALLED) {
-                return true;
-            }
-
-            return false;
+            installed_cached = backend_reports_installed_sync ();
+            return installed_cached;
         }
+    }
+
+    public void mark_installed () {
+        installed_cached = true;
     }
 
     public bool update_available {
         get {
             return state == State.UPDATE_AVAILABLE;
+        }
+    }
+
+    /**
+     * The component ID of the package with the .desktop suffix removed if it exists.
+     * This is used for comparing two packages to see if they have a matching ID
+     */
+    private string? _component_id = null;
+    public string normalized_component_id {
+        get {
+            if (_component_id != null) {
+                return _component_id;
+            }
+
+            _component_id = component.id;
+            if (_component_id.has_suffix (".desktop")) {
+                _component_id = _component_id.substring (0, _component_id.length + _component_id.index_of_nth_char (-8));
+            }
+
+            return _component_id;
+        }
+    }
+
+    public bool should_pay {
+        get {
+            if (!is_native || is_os_updates) {
+                return false;
+            }
+
+            if (get_payments_key () == null || get_suggested_amount () == "0") {
+                return false;
+            }
+
+            if (component.get_id () in AppCenter.Settings.get_default ().paid_apps) {
+                return false;
+            }
+
+            var newest_release = get_newest_release ();
+            if (newest_release != null && newest_release.get_urgency () == AppStream.UrgencyKind.CRITICAL) {
+                return false;
+            }
+
+            return true;
+        }
+    }
+
+    public bool should_nag_update {
+        get {
+            return update_available && should_pay;
         }
     }
 
@@ -105,7 +174,7 @@ public class AppCenterCore.Package : Object {
 
     public bool changes_finished {
         get {
-            return change_information.status == Pk.Status.FINISHED;
+            return change_information.status == ChangeInformation.Status.FINISHED;
         }
     }
 
@@ -127,15 +196,9 @@ public class AppCenterCore.Package : Object {
         }
     }
 
-    public bool is_snap {
-        get {
-            return component.get_id ().has_suffix (SNAP_ID_SUFFIX);
-        }
-    }
-
     public bool is_shareable {
         get {
-            return false;
+            return is_native && !is_driver && !is_os_updates;
         }
     }
 
@@ -149,7 +212,56 @@ public class AppCenterCore.Package : Object {
                 default:
                     return false;
             }
+        }
+    }
+
+    public bool is_compulsory {
+        get {
+            unowned string? _current = Environment.get_variable ("XDG_SESSION_DESKTOP");
+            if (_current == null) {
+                return false;
+            }
+
+            string current = _current.down ();
+            unowned GenericArray<string> compulsory = component.get_compulsory_for_desktops ();
+            for (int i = 0; i < compulsory.length; i++) {
+                if (current == compulsory[i].down ()) {
+                    return true;
+                }
+            }
+
             return false;
+        }
+    }
+
+    private bool _explicit = false;
+    private bool _check_explicit = true;
+    public bool is_explicit {
+        get {
+            if (_check_explicit) {
+                _check_explicit = false;
+                var ratings = component.get_content_ratings ();
+                for (int i = 0; i < ratings.length; i++) {
+                    var rating = ratings[i];
+
+                    foreach (string tag in EXPLICIT_TAGS) {
+                        var rating_value = rating.get_value (tag);
+                        if (rating_value > AppStream.ContentRatingValue.MILD) {
+                            _explicit = true;
+                            return _explicit;
+                        }
+                    }
+                }
+            }
+
+            return _explicit;
+        }
+    }
+
+    public bool is_flatpak {
+        get {
+            return (backend is FlatpakBackend)
+                || change_information.updatable_packages.contains (FlatpakBackend.get_default ());
         }
     }
 
@@ -183,15 +295,52 @@ public class AppCenterCore.Package : Object {
 
             _author_title = author;
             if (_author_title == null) {
-                _author_title = _("The %s Developers").printf (get_name ());
+                _author_title = _("%s Developers").printf (get_name ());
             }
 
             return _author_title;
         }
     }
 
+    public bool is_plugin {
+        get {
+            return component.get_kind () == AppStream.ComponentKind.ADDON;
+        }
+    }
+
+    public Gee.Collection<Package> versions {
+        owned get {
+            return BackendAggregator.get_default ().get_packages_for_component_id (component.get_id ());
+        }
+    }
+
+    public bool has_multiple_versions {
+        get {
+            return versions.size > 1;
+        }
+    }
+
+    public string origin_description {
+        owned get {
+            if (backend is PackageKitBackend) {
+                if (component.get_origin () == APPCENTER_PACKAGE_ORIGIN) {
+                    return _("AppCenter");
+                } else if (component.get_origin () == ELEMENTARY_STABLE_PACKAGE_ORIGIN || component.get_origin () == ELEMENTARY_DAILY_PACKAGE_ORIGIN) {
+                    return _("elementary Updates");
+                } else if (component.get_origin ().has_prefix ("ubuntu-")) {
+                    return _("Ubuntu (non-curated)");
+                }
+            } else if (backend is FlatpakBackend) {
+                return _("%s (non-curated)").printf (component.get_origin ());
+            } else if (backend is UbuntuDriversBackend) {
+                return _("Ubuntu Drivers");
+            }
+
+            return _("Unknown Origin (non-curated)");
+        }
+    }
+
     private string? name = null;
-    private string? title = null;
     public string? description = null;
     private string? summary = null;
     private string? color_primary = null;
@@ -204,19 +353,36 @@ public class AppCenterCore.Package : Object {
         internal set { _latest_version = convert_version (value); }
     }
 
-    private Pk.Package? pk_package = null;
+    private PackageDetails? backend_details = null;
     private AppInfo? app_info;
     private bool app_info_retrieved = false;
 
     construct {
-        installed_packages = new Gee.TreeSet<Pk.Package> ();
         change_information = new ChangeInformation ();
         change_information.status_changed.connect (() => info_changed (change_information.status));
+
         action_cancellable = new GLib.Cancellable ();
     }
 
-    public Package.addComponent (AppStream.Component component) {
-        Object (component: component);
+    public Package (Backend backend, AppStream.Component component) {
+        Object (backend: backend, component: component);
+    }
+
+    public void replace_component (AppStream.Component component) {
+        name = null;
+        description = null;
+        summary = null;
+        color_primary = null;
+        color_primary_text = null;
+        payments_key = null;
+        suggested_amount = null;
+        _latest_version = null;
+        installed_cached = false;
+        _author = null;
+        _author_title = null;
+        backend_details = null;
+
+        this.component = component;
     }
 
     public void update_state () {
@@ -229,14 +395,6 @@ public class AppCenterCore.Package : Object {
         } else {
             state = State.NOT_INSTALLED;
         }
-    }
-
-    public void set_status (State snapstatus) {
-        state = snapstatus;
-    }
-
-    public void set_title (string snap_title){
-        this.title = snap_title;
     }
 
     public async bool update () {
@@ -271,25 +429,19 @@ public class AppCenterCore.Package : Object {
         }
     }
 
-    public async bool uninstall () {
+    public async bool uninstall () throws Error {
         if (state == State.INSTALLED || state == State.UPDATE_AVAILABLE) {
             try {
                 return yield perform_operation (State.REMOVING, State.NOT_INSTALLED, state);
             } catch (Error e) {
-                return false;
+                throw e;
             }
         }
 
-        return false;
+        throw new PackageUninstallError.APP_STATE_NOT_INSTALLED (_("Application state not set as installed in AppCenter for package: %s".printf (get_name ())));
     }
 
     public void launch () throws Error {
-        if(is_snap)
-        {
-            Process.spawn_command_line_async("snap run " + get_name ());
-            return;
-        }
-
         if (app_info == null) {
             throw new PackageLaunchError.APP_INFO_NOT_FOUND ("AppInfo not found for package: %s".printf (get_name ()));
         }
@@ -302,41 +454,18 @@ public class AppCenterCore.Package : Object {
     }
 
     private async bool perform_operation (State performing, State after_success, State after_fail) throws GLib.Error {
-        var exit_status = Pk.Exit.UNKNOWN;
-
-        if(is_snap){
-            try {
-                prepare_package_operation (performing);
-                var boo = yield perform_snap_package_operation ();
-
-                if(boo)
-                    exit_status = Pk.Exit.SUCCESS;
-                else
-                    exit_status = Pk.Exit.FAILED;
-
-            } catch (GLib.Error e) {
-                warning ("Operation failed for package %s - %s", get_name (), e.message);
-                throw e;
-            } finally {
-                clean_up_package_operation (exit_status, after_success, after_fail);
-            }
-
-            return (exit_status == Pk.Exit.SUCCESS);
+        bool success = false;
+        prepare_package_operation (performing);
+        try {
+            success = yield perform_package_operation ();
+        } catch (GLib.Error e) {
+            warning ("Operation failed for package %s - %s", get_name (), e.message);
+            throw e;
+        } finally {
+            clean_up_package_operation (success, after_success, after_fail);
         }
-        else {
-            prepare_package_operation (performing);
-            try {
-                exit_status = yield perform_package_operation ();
-            } catch (GLib.Error e) {
-                warning ("Operation failed for package %s - %s", get_name (), e.message);
-                throw e;
-            } finally {
-                clean_up_package_operation (exit_status, after_success, after_fail);
-            }
 
-            return (exit_status == Pk.Exit.SUCCESS);
-        }
-        return false;
+        return success;
     }
 
     private void prepare_package_operation (State initial_state) {
@@ -347,48 +476,44 @@ public class AppCenterCore.Package : Object {
         state = initial_state;
     }
 
-    private async bool perform_snap_package_operation () throws GLib.Error {
-        Snapd.ProgressCallback cb = change_information.SnapdProgressCallback;
-        var client = AppCenterCore.SnapClient.get_default ();
+    private async bool perform_package_operation () throws GLib.Error {
+        ChangeInformation.ProgressCallback cb = change_information.callback;
+        var client = AppCenterCore.Client.get_default ();
+
         switch (state) {
             case State.UPDATING:
-                return yield client.update_snap_package (this, cb, action_cancellable);
+                var success = yield backend.update_package (this, (owned)cb, action_cancellable);
+                if (success) {
+                    change_information.clear_update_info ();
+                }
+
+                yield client.refresh_updates ();
+                return success;
             case State.INSTALLING:
-                return yield client.install_snap_package (this, cb, action_cancellable);
+                var success = yield backend.install_package (this, (owned)cb, action_cancellable);
+                installed_cached = success;
+                return success;
             case State.REMOVING:
-                return yield client.remove_snap_package (this, cb, action_cancellable);
+                var success = yield backend.remove_package (this, (owned)cb, action_cancellable);
+                installed_cached = !success;
+                yield client.refresh_updates ();
+                return success;
             default:
                 return false;
         }
     }
 
-    private async Pk.Exit perform_package_operation () throws GLib.Error {
-        Pk.ProgressCallback cb = change_information.ProgressCallback;
-        var client = AppCenterCore.Client.get_default ();
-        switch (state) {
-            case State.UPDATING:
-                return yield client.update_package (this, cb, action_cancellable);
-            case State.INSTALLING:
-                return yield client.install_package (this, cb, action_cancellable);
-            case State.REMOVING:
-                return yield client.remove_package (this, cb, action_cancellable);
-            default:
-                return Pk.Exit.UNKNOWN;
-        }
-    }
-
-    private void clean_up_package_operation (Pk.Exit exit_status, State success_state, State fail_state) {
+    private void clean_up_package_operation (bool success, State success_state, State fail_state) {
         changing (false);
 
-        installed_packages.add_all (change_information.changes);
-        if (exit_status == Pk.Exit.SUCCESS) {
+        if (success) {
             change_information.complete ();
             state = success_state;
         } else {
             state = fail_state;
             change_information.cancel ();
         }
-     }
+    }
 
     public string? get_name () {
         if (name != null) {
@@ -396,37 +521,26 @@ public class AppCenterCore.Package : Object {
         }
 
         name = component.get_name ();
-
         if (name == null) {
-            var package = find_package ();
-            if (package != null) {
-                name = package.get_name ();
+            if (backend_details == null) {
+                populate_backend_details_sync ();
             }
+
+            name = backend_details.name;
         }
 
         return name;
     }
 
-    public string? get_title () {
-        if (title != null) {
-            return title;
-        }
-        else {
-            return get_name ();
-        }
-    }
-
     public string? get_description () {
-        if (description != null) {
-            return description;
-        }
-
-        description = component.get_description ();
-
         if (description == null) {
-            var package = find_package ();
-            if (package != null) {
-                description = package.description;
+            description = component.get_description ();
+            if (description == null) {
+                if (backend_details == null) {
+                    populate_backend_details_sync ();
+                }
+
+                description = backend_details.description;
             }
         }
 
@@ -439,80 +553,67 @@ public class AppCenterCore.Package : Object {
         }
 
         summary = component.get_summary ();
-
         if (summary == null) {
-            var package = find_package ();
-            if (package != null) {
-                summary = package.get_summary ();
+            if (backend_details == null) {
+                populate_backend_details_sync ();
             }
+
+            summary = backend_details.summary;
         }
 
         return summary;
     }
 
     public string get_progress_description () {
-        return change_information.get_status_string ();
+        return change_information.status_description;
     }
 
-    public void set_snap_icon (GLib.Icon snapd_icon)
-    {
-      if (snapd_icon == null)
-        snap_icon = new ThemedIcon ("application-default-icon");
-      else
-        snap_icon = snapd_icon;
-    }
-
-    public GLib.Icon get_icon (uint size = 32) {
+    public GLib.Icon get_icon (uint size, uint scale_factor) {
         GLib.Icon? icon = null;
         uint current_size = 0;
-        bool is_stock = false;
+        uint current_scale = 0;
+        uint pixel_size = size * scale_factor;
 
-        component.get_icons ().foreach ((_icon) => {
-            if (is_stock) {
-                return;
-            }
-
+        weak GenericArray<AppStream.Icon> icons = component.get_icons ();
+        for (int i = 0; i < icons.length; i++) {
+            weak AppStream.Icon _icon = icons[i];
             switch (_icon.get_kind ()) {
                 case AppStream.IconKind.STOCK:
-                    if (Gtk.IconTheme.get_default ().has_icon (_icon.get_name ())) {
-                        is_stock = true;
-                        icon = new ThemedIcon (_icon.get_name ());
+                    unowned string icon_name = _icon.get_name ();
+                    if (Gtk.IconTheme.get_default ().has_icon (icon_name)) {
+                        return new ThemedIcon (icon_name);
                     }
 
                     break;
                 case AppStream.IconKind.CACHED:
                 case AppStream.IconKind.LOCAL:
-                    if (is_snap) {
-                      var file = File.new_for_path (_icon.get_filename ());
-
-                      if(!file.query_exists ())
-                        file = File.new_for_path ("/snap/"+name+"/current/meta/"+name+".png");
-
-                      icon = new FileIcon (file);
-                      current_size = _icon.get_width ();
-
-                      // if no icon can be found in snap use theme
-                      if(!file.query_exists ())
-                        icon = new ThemedIcon (_icon.get_name ());
-                    }
-                    if (_icon.get_width () > current_size && current_size < size) {
+                    var icon_scale = _icon.get_scale ();
+                    var icon_width = _icon.get_width () * icon_scale;
+                    bool is_bigger = (icon_width > current_size && current_size < pixel_size);
+                    bool has_better_dpi = (icon_width == current_size && current_scale < icon_scale && scale_factor <= icon_scale);
+                    if (is_bigger || has_better_dpi) {
                         var file = File.new_for_path (_icon.get_filename ());
                         icon = new FileIcon (file);
-                        current_size = _icon.get_width ();
+                        current_size = icon_width;
+                        current_scale = icon_scale;
                     }
 
                     break;
                 case AppStream.IconKind.REMOTE:
-                    //if (_icon.get_width () > current_size && current_size < size) {
-                    if(_icon.get_url () != null) {
+                    var icon_scale = _icon.get_scale ();
+                    var icon_width = _icon.get_width () * icon_scale;
+                    bool is_bigger = (icon_width > current_size && current_size < pixel_size);
+                    bool has_better_dpi = (icon_width == current_size && current_scale < icon_scale && scale_factor <= icon_scale);
+                    if (is_bigger || has_better_dpi) {
                         var file = File.new_for_uri (_icon.get_url ());
                         icon = new FileIcon (file);
-                        current_size = _icon.get_width ();
+                        current_size = icon_width;
+                        current_scale = icon_scale;
                     }
 
                     break;
-                }
-        });
+            }
+        }
 
         if (icon == null) {
             if (component.get_kind () == AppStream.ComponentKind.ADDON) {
@@ -525,14 +626,34 @@ public class AppCenterCore.Package : Object {
         return icon;
     }
 
+    public Package? get_plugin_host_package () {
+        var extends = component.get_extends ();
+
+        if (extends == null || extends.length < 1) {
+            return null;
+        }
+
+        for (int i = 0; i < extends.length; i++) {
+            var package = backend.get_package_for_component_id (extends[i]);
+            if (package != null) {
+                return package;
+            }
+        }
+
+        return null;
+    }
+
     public string? get_version () {
         if (latest_version != null) {
             return latest_version;
         }
 
-        var package = find_package ();
-        if (package != null) {
-            latest_version = package.get_version ();
+        if (backend_details == null) {
+            populate_backend_details_sync ();
+        }
+
+        if (backend_details.version != null) {
+            latest_version = backend_details.version;
         }
 
         return latest_version;
@@ -575,6 +696,10 @@ public class AppCenterCore.Package : Object {
     }
 
     private string convert_version (string version) {
+        if (is_os_updates) {
+            return version;
+        }
+
         string returned = version;
         returned = returned.split ("+", 2)[0];
         returned = returned.split ("-", 2)[0];
@@ -587,17 +712,30 @@ public class AppCenterCore.Package : Object {
     }
 
     public bool get_can_launch () {
-
-        if(is_snap)
-          return true;
-
         if (app_info_retrieved) {
             return app_info != null;
         }
 
-        //string? desktop_id = component.get_launchable ().get_entries(AppStream.LaunchableKind.DESKTOP_ID)[0];
-        string? desktop_id = component.get_desktop_id ();
+        var launchable = component.get_launchable (AppStream.LaunchableKind.DESKTOP_ID);
+        if (launchable != null) {
+            var launchables = launchable.get_entries ();
+            for (int i = 0; i < launchables.length; i++) {
+                app_info = new DesktopAppInfo (launchables[i]);
+                // A bit strange in Vala, but the DesktopAppInfo constructor does indeed return null if the desktop
+                // file isn't found: https://valadoc.org/gio-unix-2.0/GLib.DesktopAppInfo.DesktopAppInfo.html
+                if (app_info != null) {
+                    break;
+                }
+            }
+        }
 
+        if (app_info != null) {
+            app_info_retrieved = true;
+            return true;
+        }
+
+        // Fallback to trying Appstream ID as desktop ID for applications that haven't updated to the newest spec yet
+        string? desktop_id = component.id;
         if (desktop_id != null) {
             app_info = new DesktopAppInfo (desktop_id);
         }
@@ -610,6 +748,20 @@ public class AppCenterCore.Package : Object {
         var list = new Gee.ArrayList<AppStream.Release> ();
 
         var releases = component.get_releases ();
+        uint index = 0;
+        while (index < releases.length) {
+            if (releases[index].get_version () == null) {
+                releases.remove_index (index);
+                if (index >= releases.length) {
+                    break;
+                }
+
+                continue;
+            }
+
+            index++;
+        }
+
         if (releases.length < min_releases) {
             return list;
         }
@@ -648,6 +800,16 @@ public class AppCenterCore.Package : Object {
     public AppStream.Release? get_newest_release () {
         var releases = component.get_releases ();
         releases.sort_with_data ((a, b) => {
+            if (a.get_version () == null || b.get_version () == null) {
+                if (a.get_version () != null) {
+                    return -1;
+                } else if (b.get_version () != null) {
+                    return 1;
+                } else {
+                    return 0;
+                }
+            }
+
             return b.vercmp (a);
         });
 
@@ -658,31 +820,57 @@ public class AppCenterCore.Package : Object {
         return null;
     }
 
-    public void set_package (Pk.Package package)
-    {
-      pk_package = package;
+    public async uint64 get_download_size_including_deps () {
+        uint64 size = 0;
+        try {
+            size = yield backend.get_download_size (this, null);
+        } catch (Error e) {
+            warning ("Error getting download size: %s", e.message);
+        }
+
+        return size;
     }
 
-    public Pk.Package? find_package () {
+    private bool backend_reports_installed_sync () {
+        var loop = new MainLoop ();
+        bool result = false;
+        backend.is_package_installed.begin (this, (obj, res) => {
+            try {
+                result = backend.is_package_installed.end (res);
+            } catch (Error e) {
+                warning (e.message);
+                result = false;
+            } finally {
+                loop.quit ();
+            }
+        });
+
+        loop.run ();
+        return result;
+    }
+
+    private void populate_backend_details_sync () {
         if (component.id == OS_UPDATES_ID || is_local) {
-            return null;
+            backend_details = new PackageDetails ();
+            return;
         }
 
-        if(is_snap && pk_package != null){
-          return pk_package;
-        }
+        var loop = new MainLoop ();
+        PackageDetails? result = null;
+        backend.get_package_details.begin (this, (obj, res) => {
+            try {
+                result = backend.get_package_details.end (res);
+            } catch (Error e) {
+                warning (e.message);
+            } finally {
+                loop.quit ();
+            }
+        });
 
-        if (pk_package != null) {
-            return pk_package;
+        loop.run ();
+        backend_details = result;
+        if (backend_details == null) {
+            backend_details = new PackageDetails ();
         }
-
-        try {
-            pk_package = AppCenterCore.Client.get_default ().get_app_package (component.get_pkgnames ()[0], 0);
-        } catch (Error e) {
-            warning (e.message);
-            return null;
-        }
-
-        return pk_package;
     }
 }

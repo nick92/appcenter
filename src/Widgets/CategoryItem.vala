@@ -57,7 +57,7 @@ public class AppCenter.Widgets.CategoryItem : Gtk.FlowBoxChild {
         themed_grid.get_style_context ().add_class ("category");
         themed_grid.attach (grid, 0, 0, 1, 1);
         themed_grid.attach (expanded_grid, 0, 0, 1, 1);
-        themed_grid.margin = 10;
+        themed_grid.margin = 12;
 
         child = themed_grid;
 
@@ -78,13 +78,11 @@ public class AppCenter.Widgets.CategoryItem : Gtk.FlowBoxChild {
     public void add_category_class (string theme_name) {
         themed_grid.get_style_context ().add_class (theme_name);
 
-        /*if (theme_name == "games" || theme_name == "accessibility") {
+        if (theme_name == "games" || theme_name == "accessibility") {
             name_label.label = app_category.name.up ();
         } else {
             name_label.label = app_category.name;
-        }*/
-
-        name_label.label = app_category.name;
+        }
 
         if (theme_name == "science") {
             name_label.justify = Gtk.Justification.CENTER;

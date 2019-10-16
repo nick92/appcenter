@@ -20,7 +20,8 @@
  */
 
 namespace AppCenter.Views {
-/** AppList for the Updates View. Sorts update_available first and shows headers. **/
+/** AppList for the Updates View. Sorts update_available first and shows headers.
+      * Does not show Uninstall Button **/
     public class AppListUpdateView : AbstractAppList {
         private Gtk.Button? update_all_button;
         private bool updating_all_apps = false;
@@ -29,7 +30,6 @@ namespace AppCenter.Views {
         private uint apps_done = 0;
         private Gee.LinkedList<AppCenterCore.Package> apps_to_update;
         private AppCenterCore.Package first_package;
-        private SuspendControl sc;
 
         private bool _updating_cache;
         public bool updating_cache {
@@ -53,8 +53,6 @@ namespace AppCenter.Views {
             update_mutex = GLib.Mutex ();
             apps_to_update = new Gee.LinkedList<AppCenterCore.Package> ();
 
-            sc = new SuspendControl ();
-
             var info_label = new Gtk.Label (_("A restart is required to complete the installation of updates"));
             info_label.show ();
 
@@ -68,8 +66,7 @@ namespace AppCenter.Views {
 
             infobar.response.connect ((response) => {
                 if (response == 0) {
-                    var dialog = new Widgets.RestartDialog ();
-                    dialog.show_all ();
+                    Utils.reboot ();
                 }
             });
 
@@ -84,7 +81,7 @@ namespace AppCenter.Views {
         }
 
         protected override Widgets.AppListRow construct_row_for_package (AppCenterCore.Package package) {
-            return new Widgets.PackageRow.installed (package, info_grid_group, action_button_group, true);
+            return new Widgets.PackageRow.installed (package, info_grid_group, action_button_group, false);
         }
 
         protected override void on_package_changing (AppCenterCore.Package package, bool is_changing) {
@@ -99,22 +96,34 @@ namespace AppCenter.Views {
             bool a_is_updating = row1.get_is_updating ();
             bool b_is_updating = row2.get_is_updating ();
 
+            // The currently updating package is always top of the list
             if (a_is_updating || b_is_updating) {
                 return a_is_updating ? -1 : 1;
-            }
-
-            bool a_is_os = row1.get_is_os_updates ();
-            bool b_is_os = row2.get_is_os_updates ();
-
-            if (a_is_os || b_is_os) { /* OS update row sorts ahead of other update rows */
-                return a_is_os ? -1 : 1;
             }
 
             bool a_has_updates = row1.get_update_available ();
             bool b_has_updates = row2.get_update_available ();
 
-            if (a_has_updates != b_has_updates) { /* Updates rows sort ahead of updated rows */
-                return a_has_updates ? -1 : 1;
+            bool a_is_os = row1.get_is_os_updates ();
+            bool b_is_os = row2.get_is_os_updates ();
+
+            // Sort updatable OS updates first, then other updatable packages
+            if (a_has_updates != b_has_updates) {
+                if (a_is_os && a_has_updates) {
+                    return -1;
+                }
+
+                if (b_is_os && b_has_updates) {
+                    return 1;
+                }
+
+                if (a_has_updates) {
+                    return -1;
+                }
+
+                if (b_has_updates) {
+                    return 1;
+                }
             }
 
             bool a_is_driver = row1.get_is_driver ();
@@ -122,6 +131,11 @@ namespace AppCenter.Views {
 
             if (a_is_driver != b_is_driver) {
                 return a_is_driver ? - 1 : 1;
+            }
+
+            // Ensures OS updates are sorted to the top amongst up-to-date packages
+            if (a_is_os || b_is_os) {
+                return a_is_os ? -1 : 1;
             }
 
             return row1.get_name_label ().collate (row2.get_name_label ()); /* Else sort in name order */
@@ -141,25 +155,39 @@ namespace AppCenter.Views {
                 var header = new Widgets.UpdatesGrid ();
 
                 uint update_numbers = 0U;
+                uint nag_numbers = 0U;
                 uint64 update_real_size = 0ULL;
+                bool using_flatpak = false;
                 foreach (var package in get_packages ()) {
                     if (package.update_available || package.is_updating) {
+                        if (package.should_nag_update) {
+                            nag_numbers++;
+                        }
+
+                        if (!using_flatpak && package.is_flatpak) {
+                            using_flatpak = true;
+                        }
+
                         update_numbers++;
-                        update_real_size += package.change_information.get_size ();
+                        update_real_size += package.change_information.size;
                     }
                 }
 
-                header.update (update_numbers, update_real_size, updating_cache);
+                header.update (update_numbers, update_real_size, updating_cache, using_flatpak);
 
                 // Unfortunately the update all button needs to be recreated everytime the header needs to be updated
                 if (!updating_cache && update_numbers > 0) {
                     update_all_button = new Gtk.Button.with_label (_("Update All"));
+                    if (update_numbers == nag_numbers) {
+                        update_all_button.sensitive = false;
+                    }
+
                     update_all_button.valign = Gtk.Align.CENTER;
                     update_all_button.get_style_context ().add_class (Gtk.STYLE_CLASS_SUGGESTED_ACTION);
                     update_all_button.clicked.connect (on_update_all);
                     action_button_group.add_widget (update_all_button);
 
-                    header.add_widget (update_all_button);
+                    header.add (update_all_button);
                 }
 
                 header.show_all ();
@@ -180,7 +208,7 @@ namespace AppCenter.Views {
                 }
 
                 var header = new Widgets.UpdatedGrid ();
-                header.update (0, 0, updating_cache);
+                header.update (0, 0, updating_cache, false);
                 header.show_all ();
                 row.set_header (header);
             }
@@ -202,7 +230,7 @@ namespace AppCenter.Views {
             apps_to_update.clear ();
             // Collect all ready to update apps
             foreach (var package in get_packages ()) {
-                if (package.update_available) {
+                if (package.update_available && !package.should_nag_update) {
                     apps_to_update.add (package);
                 }
             }
@@ -216,7 +244,7 @@ namespace AppCenter.Views {
             // Update all updateable apps
             if (apps_to_update.size > 0) {
                 // Prevent computer from sleeping while updating apps
-                sc.inhibit ();
+                SuspendControl.get_default ().inhibit ();
 
                 first_package = apps_to_update[0];
                 first_package.info_changed.connect_after (after_first_package_info_changed);
@@ -228,27 +256,31 @@ namespace AppCenter.Views {
             }
         }
 
-        private void after_first_package_info_changed (Pk.Status status) {
+        private void after_first_package_info_changed (AppCenterCore.ChangeInformation.Status status) {
             assert (!apps_remaining_started);
 
             /* Only interested if the first package has started running or has been cancelled (before starting) */
-            if (status != Pk.Status.CANCEL && status != Pk.Status.RUNNING) {
+            if (status != AppCenterCore.ChangeInformation.Status.CANCELLED && status != AppCenterCore.ChangeInformation.Status.RUNNING) {
                 return;
             }
 
             /* Not interested in any future changes for first_package */
             first_package.info_changed.disconnect (after_first_package_info_changed);
 
-            if (status != Pk.Status.CANCEL) { /* must  be running */
-                apps_remaining_started = true;
-                for (int i = 1; i < apps_to_update.size; i++) {
-                    apps_to_update[i].update.begin (() => {
-                        on_app_update_end ();
-                    });
+            Idle.add (() => {
+                if (status != AppCenterCore.ChangeInformation.Status.CANCELLED) { /* must  be running */
+                    apps_remaining_started = true;
+                    for (int i = 1; i < apps_to_update.size; i++) {
+                        apps_to_update[i].update.begin (() => {
+                            on_app_update_end ();
+                        });
+                    }
+                } else { /* it was aborted - do not start updating the rest */
+                    finish_updating_all_apps ();
                 }
-            } else { /* it was aborted - do not start updating the rest */
-                finish_updating_all_apps ();
-            }
+
+                return GLib.Source.REMOVE;
+            });
         }
 
         private void on_app_update_end () {
@@ -267,7 +299,7 @@ namespace AppCenter.Views {
             assert (updating_all_apps && packages_changing == 0);
 
             updating_all_apps = false;
-            sc.uninhibit ();
+            SuspendControl.get_default ().uninhibit ();
 
             /* Set the action button sensitive and emit "changed" on each row in order to update
              * the sort order and headers (any change would have been ignored while updating) */

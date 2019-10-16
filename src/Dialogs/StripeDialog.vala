@@ -20,7 +20,7 @@
 public class AppCenter.Widgets.StripeDialog : Gtk.Dialog {
     public signal void download_requested ();
 
-    private const string HOUSTON_URI =  "https://developer.elementary.io/api/payment/%s";
+    private const string HOUSTON_URI = "https://developer.elementary.io/api/payment/%s";
     private const string HOUSTON_PAYLOAD = "{ "
                                 + "\"data\": {"
                                     + "\"key\": \"%s\","
@@ -29,7 +29,7 @@ public class AppCenter.Widgets.StripeDialog : Gtk.Dialog {
                                     + "\"amount\": %s,"
                                     + "\"currency\": \"USD\""
                                 + "}}";
-    private const string USER_AGENT = "Stripe checkout";
+    private const string USER_AGENT = "elementary AppCenter";
     private const string STRIPE_URI = "https://api.stripe.com/v1/tokens";
     private const string STRIPE_AUTH = "Bearer %s";
     private const string STRIPE_REQUEST = "email=%s"
@@ -47,7 +47,7 @@ public class AppCenter.Widgets.StripeDialog : Gtk.Dialog {
     private Gtk.Stack layouts;
 
     private Gtk.Entry email_entry;
-    private Gtk.Entry card_number_entry;
+    private AppCenter.Widgets.CardNumberEntry card_number_entry;
     private Gtk.Entry card_expiration_entry;
     private Gtk.Entry card_cvc_entry;
     private Gtk.Button pay_button;
@@ -66,48 +66,59 @@ public class AppCenter.Widgets.StripeDialog : Gtk.Dialog {
     private bool cvc_valid = false;
 
     public StripeDialog (int _amount, string _app_name, string _app_id, string _stripe_key) {
-        Object (amount: _amount,
-                app_name: _app_name,
-                app_id: _app_id,
-                deletable: false,
-                resizable: false,
-                stripe_key: _stripe_key);
+        Object (
+            amount: _amount,
+            app_name: _app_name,
+            app_id: _app_id,
+            deletable: false,
+            resizable: false,
+            stripe_key: _stripe_key,
+            title: _("Payment")
+        );
     }
 
     construct {
+        var image = new Gtk.Image.from_icon_name ("payment-card", Gtk.IconSize.DIALOG);
+        image.valign = Gtk.Align.START;
+
+        var overlay_image = new Gtk.Image.from_icon_name ("system-software-install", Gtk.IconSize.LARGE_TOOLBAR);
+        overlay_image.halign = overlay_image.valign = Gtk.Align.END;
+
+        var overlay = new Gtk.Overlay ();
+        overlay.valign = Gtk.Align.START;
+        overlay.add (image);
+        overlay.add_overlay (overlay_image);
+
         var primary_label = new Gtk.Label (_("Pay $%d for %s").printf (amount, app_name));
         primary_label.get_style_context ().add_class ("primary");
         primary_label.xalign = 0;
 
         var secondary_label = new Gtk.Label (_("This is a one time payment. Your email address is only used to send you a receipt."));
+        secondary_label.margin_bottom = 18;
         secondary_label.max_width_chars = 50;
         secondary_label.wrap = true;
         secondary_label.xalign = 0;
 
-
         email_entry = new Gtk.Entry ();
         email_entry.hexpand = true;
         email_entry.input_purpose = Gtk.InputPurpose.EMAIL;
+        email_entry.margin_bottom = 6;
         email_entry.placeholder_text = _("Email");
         email_entry.primary_icon_name = "internet-mail-symbolic";
-        email_entry.tooltip_text = _("Your email address is used to send a receipt. It is never stored and you will not be subscribed to a mailing list.");
+        email_entry.tooltip_text = _("Your email address is only used to send a receipt. You will not be subscribed to any mailing list.");
 
         email_entry.changed.connect (() => {
            email_entry.text = email_entry.text.replace (" ", "").down ();
            validate (0, email_entry.text);
         });
 
-        card_number_entry = new Gtk.Entry ();
+        card_number_entry = new AppCenter.Widgets.CardNumberEntry ();
         card_number_entry.hexpand = true;
-        card_number_entry.input_purpose = Gtk.InputPurpose.DIGITS;
-        card_number_entry.max_length = 20;
-        card_number_entry.placeholder_text = _("Card Number");
-        card_number_entry.primary_icon_name = "credit-card-symbolic";
-
         card_number_entry.changed.connect (() => {
-            card_number_entry.text = card_number_entry.text.replace (" ", "");
-            validate (1, card_number_entry.text);
+            validate (1, card_number_entry.card_number);
         });
+
+        card_number_entry.bind_property ("has-focus", card_number_entry, "visibility");
 
         card_expiration_entry = new Gtk.Entry ();
         card_expiration_entry.hexpand = true;
@@ -141,6 +152,8 @@ public class AppCenter.Widgets.StripeDialog : Gtk.Dialog {
             validate (3, card_cvc_entry.text);
         });
 
+        card_cvc_entry.bind_property ("has-focus", card_cvc_entry, "visibility");
+
         var card_grid_bottom = new Gtk.Grid ();
         card_grid_bottom.get_style_context ().add_class (Gtk.STYLE_CLASS_LINKED);
         card_grid_bottom.add (card_expiration_entry);
@@ -154,27 +167,30 @@ public class AppCenter.Widgets.StripeDialog : Gtk.Dialog {
 
         card_layout = new Gtk.Grid ();
         card_layout.get_style_context ().add_class ("login");
-        card_layout.row_spacing = 12;
-        card_layout.orientation = Gtk.Orientation.VERTICAL;
-        card_layout.add (primary_label);
-        card_layout.add (secondary_label);
-        card_layout.add (email_entry);
-        card_layout.add (card_grid);
+        card_layout.column_spacing = 12;
+        card_layout.row_spacing = 6;
+        card_layout.attach (overlay, 0, 0, 1, 2);
+        card_layout.attach (primary_label, 1, 0);
+        card_layout.attach (secondary_label, 1, 1);
+        card_layout.attach (email_entry, 1, 2);
+        card_layout.attach (card_grid, 1, 3);
 
         layouts = new Gtk.Stack ();
         layouts.vhomogeneous = false;
-        layouts.margin_left = layouts.margin_right = 12;
+        layouts.margin_start = layouts.margin_end = 12;
         layouts.transition_type = Gtk.StackTransitionType.SLIDE_LEFT_RIGHT;
         layouts.add_named (card_layout, "card");
         layouts.set_visible_child_name ("card");
 
-        get_content_area ().add (layouts);
+        var content_area = get_content_area ();
+        content_area.add (layouts);
+        content_area.show_all ();
 
         var privacy_policy_link = new Gtk.LinkButton.with_label ("https://stripe.com/privacy", _("Privacy Policy"));
+        privacy_policy_link.show ();
 
         var action_area = (Gtk.ButtonBox) get_action_area ();
-        action_area.margin_right = 5;
-        action_area.margin_bottom = 5;
+        action_area.margin = 5;
         action_area.margin_top = 14;
         action_area.add (privacy_policy_link);
         action_area.set_child_secondary (privacy_policy_link, true);
@@ -185,8 +201,6 @@ public class AppCenter.Widgets.StripeDialog : Gtk.Dialog {
         pay_button.get_style_context ().add_class (Gtk.STYLE_CLASS_SUGGESTED_ACTION);
         pay_button.has_default = true;
         pay_button.sensitive = false;
-
-        show_all ();
 
         response.connect (on_response);
 
@@ -228,7 +242,7 @@ public class AppCenter.Widgets.StripeDialog : Gtk.Dialog {
 
             var label = new Gtk.Label (_("Processing"));
             label.hexpand = true;
-            label.get_style_context ().add_class ("h2");
+            label.get_style_context ().add_class (Granite.STYLE_CLASS_H2_LABEL);
 
             var box = new Gtk.Box (Gtk.Orientation.VERTICAL, 12);
             box.valign = Gtk.Align.CENTER;
@@ -308,7 +322,7 @@ public class AppCenter.Widgets.StripeDialog : Gtk.Dialog {
         try {
             switch (entry) {
                 case 0:
-                    var regex = new Regex ("""[a-z|0-9]+@[a-z|0-9]+\.[a-z]+""");
+                    var regex = new Regex ("""^[^\s]+@[^\s]+\.[^\s]+$""");
                     email_valid = regex.match (new_text);
                     break;
                 case 1:
@@ -347,12 +361,12 @@ public class AppCenter.Widgets.StripeDialog : Gtk.Dialog {
 
         if (char_count < 14) return false;
 
-        int hash = int.parse (numbers[char_count-1:char_count]);
+        int hash = int.parse (numbers[char_count - 1:char_count]);
 
         int j = 1;
         int sum = 0;
-        for (int i = char_count -1; i > 0; i--) {
-            var number = int.parse (numbers[i-1:i]);
+        for (int i = char_count - 1; i > 0; i--) {
+            var number = int.parse (numbers[i - 1:i]);
             if (j++ % 2 == 1) {
                 number = number * 2;
                 if (number > 9) {
@@ -388,7 +402,7 @@ public class AppCenter.Widgets.StripeDialog : Gtk.Dialog {
 
     private void on_pay_clicked () {
         new Thread<void*> (null, () => {
-            string expiration_dateyear = card_expiration_entry.text.replace("/", "");
+            string expiration_dateyear = card_expiration_entry.text.replace ("/", "");
             var year = (int.parse (expiration_dateyear[2:4]) + 2000).to_string ();
 
             var data = get_stripe_data (stripe_key, email_entry.text, (amount * 100).to_string (), card_number_entry.text, expiration_dateyear[0:2], year, card_cvc_entry.text);
@@ -440,8 +454,18 @@ public class AppCenter.Widgets.StripeDialog : Gtk.Dialog {
         var session = new Soup.Session ();
         var message = new Soup.Message ("POST", STRIPE_URI);
 
-        var request = STRIPE_REQUEST.printf (_email, USER_AGENT, _amount, _cc_num, _cc_cvc, _cc_exp_month, _cc_exp_year);
+        var request = STRIPE_REQUEST.printf (
+            Soup.URI.encode (_email, null),
+            Soup.URI.encode (USER_AGENT, null),
+            Soup.URI.encode (_amount, null),
+            Soup.URI.encode (_cc_num, null),
+            Soup.URI.encode (_cc_cvc, null),
+            Soup.URI.encode (_cc_exp_month, null),
+            Soup.URI.encode (_cc_exp_year, null)
+        );
+
         message.request_headers.append ("Authorization", STRIPE_AUTH.printf (_key));
+        message.request_headers.append ("Content-Type", "application/x-www-form-urlencoded");
         message.request_body.append_take (request.data);
 
         session.send_message (message);

@@ -1,7 +1,7 @@
 # Daemon Desktop file (for GNOME Session autostart)
 configure_file(
     input: meson.project_name() + '-daemon.desktop.in',
-    output: '@BASENAME@',
+    output: meson.project_name() + '-daemon.desktop',
     configuration: conf_data,
     install_dir: join_paths(get_option('datadir'), 'applications')
 )
@@ -9,18 +9,18 @@ configure_file(
 # D-Bus Service
 configure_file(
     input: meson.project_name() + '.service.in',
-    output: '@BASENAME@',
+    output: meson.project_name() + '.service',
     configuration: conf_data,
-    install_dir: dbus.get_pkgconfig_variable('session_bus_services_dir')
+    install_dir: dbus.get_pkgconfig_variable('session_bus_services_dir', define_variable: ['datadir', get_option('datadir')])
 )
 
 # GNOME Shell Search Provider
-#configure_file(
-#    input: meson.project_name() + '.search-provider.ini.in',
-#    output: '@BASENAME@',
-#    configuration: conf_data,
-#    install_dir: join_paths(get_option('datadir'), 'gnome-shell', 'search-providers')
-#)
+configure_file(
+    input: meson.project_name() + '.search-provider.ini.in',
+    output: meson.project_name() + '.search-provider.ini',
+    configuration: conf_data,
+    install_dir: join_paths(get_option('datadir'), 'gnome-shell', 'search-providers')
+)
 
 # AppData file
 i18n.merge_file(
@@ -35,7 +35,7 @@ i18n.merge_file(
 # Desktop File
 desktop_in = configure_file(
     input: meson.project_name() + '.desktop.in.in',
-    output: '@BASENAME@',
+    output: meson.project_name() + '.desktop.in',
     configuration: conf_data
 )
 
@@ -56,7 +56,7 @@ install_data(
 
 # Install GSettings schemas
 install_data(
-    meson.project_name() + '.gschema.xml',
+    'io.elementary.appcenter.gschema.xml',
     install_dir: join_paths(get_option('datadir'), 'glib-2.0', 'schemas')
 )
 

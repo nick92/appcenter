@@ -39,7 +39,6 @@ namespace AppCenter {
             list_box.expand = true;
             list_box.activate_on_single_click = true;
             list_box.set_placeholder (alert_view);
-            list_box.set_selection_mode (Gtk.SelectionMode.NONE);
             list_box.set_sort_func ((Gtk.ListBoxSortFunc) package_row_compare);
             list_box.row_activated.connect ((r) => {
                 var row = (Widgets.AppListRow)r;
@@ -71,8 +70,8 @@ namespace AppCenter {
 
         public void remove_package (AppCenterCore.Package package) {
             package.changing.disconnect (on_package_changing);
-            foreach (var r in list_box.get_children ()) {
-                var row = (Widgets.AppListRow)r;
+            foreach (weak Gtk.Widget r in list_box.get_children ()) {
+                weak Widgets.AppListRow row = r as Widgets.AppListRow;
                 if (!row.has_package ()) {
                     continue;
                 }
@@ -87,8 +86,8 @@ namespace AppCenter {
         }
 
         public virtual void clear () {
-            foreach (var r in list_box.get_children ()) {
-                var row = r as Widgets.AppListRow;
+            foreach (weak Gtk.Widget r in list_box.get_children ()) {
+                weak Widgets.AppListRow row = r as Widgets.AppListRow;
                 if (row == null) {
                     continue;
                 }
@@ -99,6 +98,8 @@ namespace AppCenter {
                     row.destroy ();
                 }
             };
+
+            on_list_changed ();
         }
 
         protected void add_row (Widgets.AppListRow row) {
@@ -109,8 +110,8 @@ namespace AppCenter {
 
         protected virtual Gee.Collection<AppCenterCore.Package> get_packages () {
             var tree_set = new Gee.TreeSet<AppCenterCore.Package> ();
-            foreach (var r in list_box.get_children ()) {
-                var row = r as Widgets.AppListRow;
+            foreach (weak Gtk.Widget r in list_box.get_children ()) {
+                weak Widgets.AppListRow row = r as Widgets.AppListRow;
                 if (row == null) {
                     continue;
                 }

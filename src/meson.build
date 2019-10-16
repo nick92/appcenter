@@ -3,16 +3,27 @@ appcenter_files = files(
     'MainWindow.vala',
     'Settings.vala',
     'SuspendControl.vala',
+    'Utils.vala',
+    'Core/BackendAggregator.vala',
+    'Core/BackendInterface.vala',
     'Core/ChangeInformation.vala',
     'Core/Client.vala',
-    'Core/SnapClient.vala',
     'Core/ComponentValidator.vala',
+    'Core/FlatpakBackend.vala',
+    # 'Core/SnapBackend.vala',
     'Core/Houston.vala',
+    'Core/Job.vala',
     'Core/Package.vala',
+    'Core/PackageKitBackend.vala',
+    'Core/ScreenshotCache.vala',
     'Core/Task.vala',
+    'Core/UbuntuDriversBackend.vala',
     'Core/UpdateManager.vala',
     'Dialogs/RestartDialog.vala',
+    'Dialogs/ContentWarningDialog.vala',
     'Dialogs/StripeDialog.vala',
+    'Dialogs/UninstallConfirmDialog.vala',
+    'Dialogs/UninstallFailDialog.vala',
     'Dialogs/UpdateFailDialog.vala',
     'Services/DBusInterfaces.vala',
     'Services/DBusServer.vala',
@@ -24,21 +35,21 @@ appcenter_files = files(
     'Views/InstalledView.vala',
     'Views/SearchView.vala',
     'Views/View.vala',
-    'Views/CategoryView.vala',	
     'Widgets/AbstractAppList.vala',
     'Widgets/AppListRow.vala',
     'Widgets/Banner.vala',
-    'Widgets/Selector.vala',
-#    'Widgets/CardNumberEntry.vala',
+    'Widgets/CardNumberEntry.vala',
     'Widgets/CategoryFlowBox.vala',
+    'Widgets/CategorySidebar.vala',
     'Widgets/CategoryItem.vala',
     'Widgets/HumbleButton.vala',
-#    'Widgets/HumblePopover.vala',
+    'Widgets/HumblePopover.vala',
+    'Widgets/NetworkInfoBar.vala',
     'Widgets/PackageRow.vala',
-    'Widgets/CategorySidebar.vala',
     'Widgets/ReleaseListBox.vala',
     'Widgets/ReleaseRow.vala',
     'Widgets/SharePopover.vala',
+    'Widgets/SizeLabel.vala',
     'Widgets/Switcher.vala',
     'Widgets/UpdateHeaderRow.vala',
     'Widgets/AppContainers/AbstractAppContainer.vala',
@@ -59,6 +70,18 @@ config_file = configure_file(
 args = []
 if get_option('curated')
     args += '--define=CURATED'
+endif
+
+if get_option('homepage')
+    args += '--define=HOMEPAGE'
+endif
+
+if get_option('payments')
+    args += '--define=PAYMENTS'
+endif
+
+if get_option('sharing')
+    args += '--define=SHARING'
 endif
 
 executable(

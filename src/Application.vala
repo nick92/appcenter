@@ -14,8 +14,8 @@
 * with this program. If not, see http://www.gnu.org/licenses/.
 */
 
-public class AppCenter.App : Granite.Application {
-    public const OptionEntry[] APPCENTER_OPTIONS =  {
+public class AppCenter.App : Gtk.Application {
+    public const OptionEntry[] APPCENTER_OPTIONS = {
         { "show-updates", 'u', 0, OptionArg.NONE, out show_updates,
         "Display the Installed Panel", null},
         { "silent", 's', 0, OptionArg.NONE, out silent,
@@ -23,12 +23,11 @@ public class AppCenter.App : Granite.Application {
         { "load-local", 'l', 0, OptionArg.FILENAME, out local_path,
         "Add a local AppStream XML file to the package list", "FILENAME" },
         { "fake-package-update", 'f', 0, OptionArg.STRING_ARRAY, out fake_update_packages,
-        "Add the package name to update results so that it is shown as an update", "PACKAGES..." },
+        "Add the package name to update results so that it is shown as an update", "PACKAGES…" },
         { null }
     };
 
     private const int SECONDS_AFTER_NETWORK_UP = 60;
-    private const int TRY_AGAIN_RESPONSE_ID = 1;
 
     public static bool show_updates;
     public static bool silent;
@@ -40,6 +39,7 @@ public class AppCenter.App : Granite.Application {
 
     [CCode (array_length = false, array_null_terminated = true)]
     public static string[]? fake_update_packages = null;
+    private Granite.MessageDialog? update_fail_dialog = null;
     private MainWindow? main_window;
 
     private uint registration_id = 0;
@@ -53,27 +53,17 @@ public class AppCenter.App : Granite.Application {
         Intl.setlocale (LocaleCategory.ALL, "");
         Intl.textdomain (Build.GETTEXT_PACKAGE);
 
-        program_name = _(Build.APP_NAME);
-
-        //build_data_dir = Build.DATADIR;
-        //build_pkg_data_dir = Build.PKGDATADIR;
-        build_release_name = Build.PROJECT_NAME;
-        build_version = Build.VERSION;
-        //build_version_info = Build.VERSION_INFO;
-
-        //app_launcher = Build.DESKTOP_FILE;
         add_main_option_entries (APPCENTER_OPTIONS);
 
         var quit_action = new SimpleAction ("quit", null);
         quit_action.activate.connect (() => {
             if (main_window != null) {
                 main_window.destroy ();
-                Gtk.main_quit ();
             }
         });
 
         var show_updates_action = new SimpleAction ("show-updates", null);
-        show_updates_action.activate.connect(() => {
+        show_updates_action.activate.connect (() => {
             silent = false;
             show_updates = true;
             activate ();
@@ -82,10 +72,10 @@ public class AppCenter.App : Granite.Application {
         var client = AppCenterCore.Client.get_default ();
         client.operation_finished.connect (on_operation_finished);
         client.cache_update_failed.connect (on_cache_update_failed);
-        client.updates_available.connect (on_updates_available);
+        client.installed_apps_changed.connect (on_updates_available);
 
         if (AppInfo.get_default_for_uri_scheme ("appstream") == null) {
-            var appinfo = new DesktopAppInfo (app_launcher);
+            var appinfo = new DesktopAppInfo (application_id + ".desktop");
             try {
                 appinfo.set_as_default_for_type ("x-scheme-handler/appstream");
             } catch (Error e) {
@@ -95,7 +85,7 @@ public class AppCenter.App : Granite.Application {
 
         add_action (quit_action);
         add_action (show_updates_action);
-        add_accelerator ("<Control>q", "app.quit", null);
+        set_accels_for_action ("app.quit", {"<Control>q"});
 
         search_provider = new SearchProvider ();
     }
@@ -105,6 +95,17 @@ public class AppCenter.App : Granite.Application {
 
         var file = files[0];
         if (file == null) {
+            return;
+        }
+
+        if (file.has_uri_scheme ("type")) {
+            string? mimetype = mimetype_from_file (file);
+            if (mimetype != null) {
+                main_window.search (mimetype, true);
+            } else {
+                info (_("Could not parse the media type %s").printf (mimetype));
+            }
+
             return;
         }
 
@@ -138,7 +139,7 @@ public class AppCenter.App : Granite.Application {
         var client = AppCenterCore.Client.get_default ();
 
         if (fake_update_packages != null) {
-            AppCenterCore.UpdateManager.get_default ().fake_packages = fake_update_packages;
+            AppCenterCore.PackageKitBackend.get_default ().fake_packages = fake_update_packages;
         }
 
         if (silent) {
@@ -156,7 +157,7 @@ public class AppCenter.App : Granite.Application {
             var file = File.new_for_commandline_arg (local_path);
 
             try {
-                local_package = client.add_local_component_file (file);
+                local_package = AppCenterCore.PackageKitBackend.get_default ().add_local_component_file (file);
             } catch (Error e) {
                 warning ("Failed to load local AppStream XML file: %s", e.message);
             }
@@ -165,9 +166,13 @@ public class AppCenter.App : Granite.Application {
         if (main_window == null) {
             main_window = new MainWindow (this);
 
+#if HOMEPAGE
             main_window.homepage_loaded.connect (() => {
                 client.update_cache.begin ();
             });
+#else
+            client.update_cache.begin ();
+#endif
 
             main_window.destroy.connect (() => {
                 main_window = null;
@@ -244,11 +249,6 @@ public class AppCenter.App : Granite.Application {
         }
     }
 
-    public void on_updates_available () {
-        var client = AppCenterCore.Client.get_default ();
-        main_window.show_update_badge (client.updates_number);
-    }
-
     private void on_operation_finished (AppCenterCore.Package package, AppCenterCore.Package.State operation, Error? error) {
         switch (operation) {
             case AppCenterCore.Package.State.INSTALLING:
@@ -290,43 +290,32 @@ public class AppCenter.App : Granite.Application {
         }
     }
 
+    public void on_updates_available () {
+        var client = AppCenterCore.Client.get_default ();
+        Idle.add (() => {
+            if (main_window != null) {
+                main_window.show_update_badge (client.updates_number);
+            }
+
+            return GLib.Source.REMOVE;
+        });
+    }
+
     private void on_cache_update_failed (Error error) {
         if (main_window == null) {
             return;
         }
 
-        string message = format_error_message (error.message);
+        if (update_fail_dialog == null) {
+            update_fail_dialog = new UpdateFailDialog (format_error_message (error.message));
+            update_fail_dialog.transient_for = main_window;
 
-        var details_label = new Gtk.Label (message);
-        details_label.margin_top = 12;
-        details_label.max_width_chars = 40;
-        details_label.selectable = true;
-        details_label.wrap = true;
-
-        var details_label_context = details_label.get_style_context ();
-        details_label_context.add_class (Gtk.STYLE_CLASS_MONOSPACE);
-        details_label_context.add_class ("terminal");
-
-        var expander = new Gtk.Expander (_("Details"));
-        expander.add (details_label);
-
-        var dialog = new Granite.MessageDialog.with_image_from_icon_name (
-            _("Failed to Fetch Updates"),
-            _("This may have been caused by external, manually added software repositories or a corrupted sources file."),
-            "dialog-error",
-            Gtk.ButtonsType.NONE
-        );
-        dialog.transient_for = main_window;
-        dialog.custom_bin.add (expander);
-        dialog.add_button (_("Ignore"), Gtk.ResponseType.CLOSE);
-        dialog.add_button (_("Try Again"), TRY_AGAIN_RESPONSE_ID);
-        dialog.show_all ();
-
-        if (dialog.run () == TRY_AGAIN_RESPONSE_ID) {
-            AppCenterCore.Client.get_default ().update_cache.begin (true);
+            update_fail_dialog.destroy.connect (() => {
+                update_fail_dialog = null;
+            });
         }
 
-        dialog.destroy ();
+        update_fail_dialog.present ();
     }
 
     private static string format_error_message (string message) {
@@ -336,6 +325,16 @@ public class AppCenter.App : Granite.Application {
         }
 
         return msg;
+    }
+
+    private static string? mimetype_from_file (File file) {
+        string uri = file.get_uri ();
+        string[] tokens = uri.split (Path.DIR_SEPARATOR_S);
+        if (tokens.length < 2) {
+            return null;
+        }
+
+        return "%s/%s".printf (tokens[tokens.length - 2], tokens[tokens.length - 1]);
     }
 }
 

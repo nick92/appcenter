@@ -25,7 +25,6 @@ public class AppCenter.MainWindow : Gtk.ApplicationWindow {
         }
     }
 
-    public AppCenter.Selector view_selector;
     private Gtk.Revealer view_mode_revealer;
     private Gtk.Stack custom_title_stack;
     private Gtk.Label homepage_header;
@@ -39,19 +38,19 @@ public class AppCenter.MainWindow : Gtk.ApplicationWindow {
     private Gtk.Button return_button;
     private ulong task_finished_connection = 0U;
     private Gee.LinkedList<string> return_button_history;
-    private Granite.Widgets.AlertView network_alert_view;
-    private Gtk.Grid network_view;
     private Gtk.Label updates_badge;
 
+    private GLib.Settings settings;
+
+    private uint configure_id;
     private int homepage_view_id;
-    private int category_view_id;
     private int installed_view_id;
+
+    private bool mimetype;
 
     private const int VALID_QUERY_LENGTH = 3;
 
     public static Views.InstalledView installed_view { get; private set; }
-
-    public static Views.CategoryView category_view { get; private set; }
 
     public signal void homepage_loaded ();
 
@@ -60,18 +59,6 @@ public class AppCenter.MainWindow : Gtk.ApplicationWindow {
 
         weak Gtk.IconTheme default_theme = Gtk.IconTheme.get_default ();
         default_theme.add_resource_path ("/io/elementary/appcenter/icons");
-
-        unowned Settings saved_state = Settings.get_default ();
-        set_default_size (saved_state.window_width, saved_state.window_height);
-
-        // Maximize window if necessary
-        switch (saved_state.window_state) {
-            case Settings.WindowState.MAXIMIZED:
-                this.maximize ();
-                break;
-            default:
-                break;
-        }
 
         view_mode.selected = homepage_view_id;
         search_entry.grab_focus_without_selecting ();
@@ -109,61 +96,54 @@ public class AppCenter.MainWindow : Gtk.ApplicationWindow {
         installed_view.get_apps.begin ();
 
         homepage.subview_entered.connect (view_opened);
-        category_view.subview_entered.connect (view_opened);
         installed_view.subview_entered.connect (view_opened);
         search_view.subview_entered.connect (view_opened);
 
-        NetworkMonitor.get_default ().network_changed.connect (on_view_mode_changed);
-
-        network_alert_view.action_activated.connect (() => {
-            try {
-                string[] args = {
-                  "gnome-control-center", "network"
-                };
-                Process.spawn_async (
-                    null,
-                    args,
-                    null,
-                    SpawnFlags.SEARCH_PATH,
-                    null,
-                    null
-                );
-            } catch (Error e) {
-                warning (e.message);
-            }
-        });
-
-        unowned AppCenterCore.Client client = AppCenterCore.Client.get_default ();
-        client.notify["task-count"].connect (() => {
-            working = client.task_count > 0;
+        unowned AppCenterCore.BackendAggregator client = AppCenterCore.BackendAggregator.get_default ();
+        client.notify["working"].connect (() => {
+            Idle.add (() => {
+                working = client.working;
+                return GLib.Source.REMOVE;
+            });
         });
 
         show.connect (on_view_mode_changed);
     }
 
     construct {
-        icon_name = "apphive";
-        set_size_request (960, 440);
+        icon_name = "system-software-install";
+        set_size_request (910, 640);
+
+        settings = new GLib.Settings ("io.elementary.appcenter.settings");
+
+        int window_x, window_y;
+        int window_width, window_height;
+        settings.get ("window-position", "(ii)", out window_x, out window_y);
+        settings.get ("window-size", "(ii)", out window_width, out window_height);
+
+        if (window_x != -1 || window_y != -1) {
+            move (window_x, window_y);
+        }
+
+        resize (window_width, window_height);
+
+        if (settings.get_boolean ("window-maximized")) {
+            maximize ();
+        }
+
         title = _(Build.APP_NAME);
-        window_position = Gtk.WindowPosition.CENTER;
-        set_visual (Gdk.Screen.get_default ().get_rgba_visual ());
-        app_paintable = true;
 
         return_button = new Gtk.Button ();
         return_button.no_show_all = true;
+        return_button.valign = Gtk.Align.CENTER;
         return_button.get_style_context ().add_class ("back-button");
         return_button_history = new Gee.LinkedList<string> ();
 
         view_mode = new Granite.Widgets.ModeButton ();
-        view_mode.margin_end = view_mode.margin_start = 2;
-        view_mode.margin_bottom = view_mode.margin_top = 2;
+        view_mode.margin_end = view_mode.margin_start = 12;
+        view_mode.margin_bottom = view_mode.margin_top = 7;
         homepage_view_id = view_mode.append_text (_("Home"));
-        category_view_id = view_mode.append_text (C_("view", "Categories"));
         installed_view_id = view_mode.append_text (C_("view", "Installed"));
-
-        /*view_selector = new Selector(Gtk.Orientation.HORIZONTAL);
-        view_selector.margin_end = 6;
-        view_selector.margin_start = 6;*/
 
         updates_badge = new Gtk.Label ("!");
         updates_badge.halign = Gtk.Align.END;
@@ -184,12 +164,14 @@ public class AppCenter.MainWindow : Gtk.ApplicationWindow {
         homepage_header.get_style_context ().add_class (Gtk.STYLE_CLASS_TITLE);
 
         custom_title_stack = new Gtk.Stack ();
-        custom_title_stack.add (view_mode_revealer);
+        //  custom_title_stack.add (view_mode_revealer);
         custom_title_stack.add (homepage_header);
         custom_title_stack.set_visible_child (view_mode_revealer);
 
         search_entry = new Gtk.SearchEntry ();
-        search_entry.placeholder_text = _("Search Apps...");
+        search_entry.valign = Gtk.Align.CENTER;
+        search_entry.get_style_context ().add_class("searchbox");
+        search_entry.placeholder_text = _("Search");
 
         spinner = new Gtk.Spinner ();
 
@@ -203,68 +185,77 @@ public class AppCenter.MainWindow : Gtk.ApplicationWindow {
 
         set_titlebar (headerbar);
 
-        homepage = new Homepage (this);
-        category_view = new Views.CategoryView ();
+        homepage = new Homepage ();
         installed_view = new Views.InstalledView ();
         search_view = new Views.SearchView ();
-
-        network_alert_view = new Granite.Widgets.AlertView (_("Network Is Not Available"),
-                                                            _("Connect to the Internet to install or update apps."),
-                                                            "network-error");
-        network_alert_view.get_style_context ().remove_class (Gtk.STYLE_CLASS_VIEW);
-        //network_alert_view.show_action (_("Network Settings…"));
-
-        network_view = new Gtk.Grid ();
-        network_view.margin = 24;
-        network_view.attach (network_alert_view, 0, 0, 1, 1);
 
         stack = new Gtk.Stack ();
         stack.transition_type = Gtk.StackTransitionType.SLIDE_LEFT_RIGHT;
         stack.add (homepage);
-        stack.add (category_view);
         stack.add (installed_view);
         stack.add (search_view);
-        stack.add (network_view);
 
-        add (stack);
+        var network_info_bar = new AppCenter.Widgets.NetworkInfoBar ();
+
+        var grid = new Gtk.Grid ();
+        grid.orientation = Gtk.Orientation.VERTICAL;
+        grid.add (network_info_bar);
+        grid.add (stack);
+
+        add (grid);
 
         homepage.page_loaded.connect (() => homepage_loaded ());
     }
 
-    public override bool delete_event (Gdk.EventAny event) {
-        int window_width;
-        int window_height;
-        get_size (out window_width, out window_height);
-        unowned Settings saved_state = Settings.get_default ();
-        saved_state.window_width = window_width;
-        saved_state.window_height = window_height;
-        if (is_maximized) {
-            saved_state.window_state = Settings.WindowState.MAXIMIZED;
-        } else {
-            saved_state.window_state = Settings.WindowState.NORMAL;
+    public override bool configure_event (Gdk.EventConfigure event) {
+        if (configure_id == 0) {
+            /* Avoid spamming the settings */
+            configure_id = Timeout.add (200, () => {
+                configure_id = 0;
+
+                if (is_maximized) {
+                    settings.set_boolean ("window-maximized", true);
+                } else {
+                    settings.set_boolean ("window-maximized", false);
+
+                    int width, height;
+                    get_size (out width, out height);
+                    settings.set ("window-size", "(ii)", width, height);
+
+                    int root_x, root_y;
+                    get_position (out root_x, out root_y);
+                    settings.set ("window-position", "(ii)", root_x, root_y);
+                }
+
+                return GLib.Source.REMOVE;
+            });
         }
 
-        unowned AppCenterCore.Client client = AppCenterCore.Client.get_default ();
-        if (client.has_tasks ()) {
+        return base.configure_event (event);
+    }
+
+    public override bool delete_event (Gdk.EventAny event) {
+        unowned AppCenterCore.PackageKitBackend client = AppCenterCore.PackageKitBackend.get_default ();
+        if (client.working) {
             if (task_finished_connection != 0U) {
                 client.disconnect (task_finished_connection);
             }
 
             hide ();
-            task_finished_connection = client.notify["task-count"].connect (() => {
-                if (!visible && client.task_count == 0) {
+            task_finished_connection = client.notify["working"].connect (() => {
+                if (!visible && !client.working) {
                     destroy ();
                 }
             });
 
-            client.cancel_updates (false); //Timeouts keep running
+            AppCenterCore.Client.get_default ().cancel_updates (false); //Timeouts keep running
             return true;
         }
 
         return false;
     }
 
-     public void show_update_badge (uint updates_number) {
+    public void show_update_badge (uint updates_number) {
         if (updates_number == 0U) {
             set_widget_visibility (updates_badge, false);
         } else {
@@ -285,7 +276,8 @@ public class AppCenter.MainWindow : Gtk.ApplicationWindow {
         view_mode.selected = installed_view_id;
     }
 
-    public void search (string term) {
+    public void search (string term, bool mimetype = false) {
+        this.mimetype = mimetype;
         search_entry.text = term;
     }
 
@@ -297,7 +289,7 @@ public class AppCenter.MainWindow : Gtk.ApplicationWindow {
         view_mode_revealer.reveal_child = !query_valid;
 
         if (query_valid) {
-            search_view.search (query, homepage.currently_viewed_category);
+            search_view.search (query, homepage.currently_viewed_category, mimetype);
             stack.visible_child = search_view;
         } else {
             if (stack.visible_child == search_view && homepage.currently_viewed_category != null) {
@@ -307,6 +299,10 @@ public class AppCenter.MainWindow : Gtk.ApplicationWindow {
 
             search_view.reset ();
             stack.visible_child = homepage;
+        }
+
+        if (mimetype) {
+            mimetype = false;
         }
     }
 
@@ -334,7 +330,7 @@ public class AppCenter.MainWindow : Gtk.ApplicationWindow {
         if (custom_search_placeholder != null) {
             search_entry.placeholder_text = custom_search_placeholder;
         } else {
-            search_entry.placeholder_text = _("Search Apps...");
+            search_entry.placeholder_text = _("Search Apps");
         }
 
         search_entry.sensitive = allow_search;
@@ -365,29 +361,17 @@ public class AppCenter.MainWindow : Gtk.ApplicationWindow {
     }
 
     private void on_view_mode_changed () {
-        var connection_available = NetworkMonitor.get_default ().get_network_available ();
-        if (connection_available) {
-            if (search_entry.text.length >= VALID_QUERY_LENGTH) {
-                stack.visible_child = search_view;
-                search_entry.sensitive = !search_view.viewing_package;
-            } else {
-                if (view_mode.selected == homepage_view_id) {
-                    stack.visible_child = homepage;
-                    search_entry.sensitive = !homepage.viewing_package;
-                } else if (view_mode.selected == category_view_id) {
-                    stack.visible_child = category_view;
-                    search_entry.sensitive = false;
-                } else if (view_mode.selected == installed_view_id) {
-                    stack.visible_child = installed_view;
-                    search_entry.sensitive = false;
-                }
-            }
+        if (search_entry.text.length >= VALID_QUERY_LENGTH) {
+            stack.visible_child = search_view;
+            search_entry.sensitive = !search_view.viewing_package;
         } else {
-            stack.visible_child = network_view;
-            search_entry.sensitive = false;
+            if (view_mode.selected == homepage_view_id) {
+                stack.visible_child = homepage;
+                search_entry.sensitive = !homepage.viewing_package;
+            } else if (view_mode.selected == installed_view_id) {
+                stack.visible_child = installed_view;
+                search_entry.sensitive = false;
+            }
         }
-
-        custom_title_stack.sensitive = connection_available;
-        return_button.sensitive = connection_available;
     }
 }
