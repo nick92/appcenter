@@ -22,21 +22,18 @@ public class AppCenter.CategorySidebar : Gtk.ScrolledWindow {
 
     private Gtk.ListBox listbox;
     static Gtk.CssProvider? previous_css_provider = null;
+    private Gtk.Label updates_badge;
 
     construct {
-        //  get_style_context ().add_class("sidebar");
+        min_content_width = 250;
+        vexpand = true;
+        hexpand = true;
+        
         listbox = new Gtk.ListBox ();
-
         var frame = new Gtk.Frame (null);
-        //frame.get_style_context ().add_class("sidebar_row");
         frame.add (listbox);
 
         add (frame);
-        this.min_content_width = 250;
-        vexpand = true;
-        hexpand = true;
-
-        //  reload_css ();
 
         listbox.row_selected.connect ((row) => {
             changed (row.get_index ());
@@ -57,6 +54,25 @@ public class AppCenter.CategorySidebar : Gtk.ScrolledWindow {
         grid.add (icon);
         grid.add (label);
 
+        if(name == "updates"){
+            updates_badge = new Gtk.Label ("!");
+            updates_badge.halign = Gtk.Align.END;
+            updates_badge.valign = Gtk.Align.START;
+            updates_badge.get_style_context ().add_class ("badge");
+            set_widget_visibility (updates_badge, false);
+            grid.add (updates_badge);
+        }
+
         listbox.add (grid);
+        listbox.select_row(listbox.get_row_at_index(0));
+    }
+
+    public void show_update_badge (uint updates_number) {
+        if (updates_number == 0U) {
+            set_widget_visibility (updates_badge, false);
+        } else {
+            updates_badge.label = updates_number.to_string ();
+            set_widget_visibility (updates_badge, true);
+        }
     }
 }

@@ -81,39 +81,39 @@ public class AppCenterCore.UpdateManager : Object {
         os_updates.component.set_pkgnames ({});
         os_updates.change_information.clear_update_info ();
 
-        unowned FlatpakBackend fp_client = FlatpakBackend.get_default ();
-        var flatpak_updates = yield fp_client.get_updates ();
+        //  unowned FlatpakBackend fp_client = FlatpakBackend.get_default ();
+        //  var flatpak_updates = yield fp_client.get_updates ();
 
-        foreach (var flatpak_update in flatpak_updates) {
-            var appcenter_package = fp_client.lookup_package_by_id (flatpak_update);
-            if (appcenter_package != null) {
-                apps_with_updates.add (appcenter_package);
-                appcenter_package.change_information.updatable_packages.@set (fp_client, flatpak_update);
-                try {
-                    appcenter_package.change_information.size = yield fp_client.get_download_size (appcenter_package, null);
-                } catch (Error e) {
-                    warning ("Unable to get flatpak download size: %s", e.message);
-                }
-            } else {
-                var name = flatpak_update.split ("/")[2];
-                os_count++;
-                os_desc += Markup.printf_escaped (
-                    "<li>%s\n\t%s</li>",
-                    name,
-                    _("Flatpak runtime")
-                );
+        //  foreach (var flatpak_update in flatpak_updates) {
+        //      var appcenter_package = fp_client.lookup_package_by_id (flatpak_update);
+        //      if (appcenter_package != null) {
+        //          apps_with_updates.add (appcenter_package);
+        //          appcenter_package.change_information.updatable_packages.@set (fp_client, flatpak_update);
+        //          try {
+        //              appcenter_package.change_information.size = yield fp_client.get_download_size (appcenter_package, null);
+        //          } catch (Error e) {
+        //              warning ("Unable to get flatpak download size: %s", e.message);
+        //          }
+        //      } else {
+        //          var name = flatpak_update.split ("/")[2];
+        //          os_count++;
+        //          os_desc += Markup.printf_escaped (
+        //              "<li>%s\n\t%s</li>",
+        //              name,
+        //              _("Flatpak runtime")
+        //          );
 
-                uint64 dl_size = 0;
-                try {
-                    dl_size = yield fp_client.get_download_size_by_id (flatpak_update, null);
-                } catch (Error e) {
-                    warning ("Unable to get flatpak download size: %s", e.message);
-                }
+        //          uint64 dl_size = 0;
+        //          try {
+        //              dl_size = yield fp_client.get_download_size_by_id (flatpak_update, null);
+        //          } catch (Error e) {
+        //              warning ("Unable to get flatpak download size: %s", e.message);
+        //          }
 
-                os_updates.change_information.size += dl_size;
-                os_updates.change_information.updatable_packages.@set (fp_client, flatpak_update);
-            }
-        }
+        //          os_updates.change_information.size += dl_size;
+        //          os_updates.change_information.updatable_packages.@set (fp_client, flatpak_update);
+        //      }
+        //  }
 
         if (os_count == 0) {
             var latest_version = _("No components with updates");

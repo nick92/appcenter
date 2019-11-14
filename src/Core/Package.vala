@@ -260,8 +260,9 @@ public class AppCenterCore.Package : Object {
 
     public bool is_flatpak {
         get {
-            return (backend is FlatpakBackend)
-                || change_information.updatable_packages.contains (FlatpakBackend.get_default ());
+            return false;
+            //  return (backend is FlatpakBackend)
+            //      || change_information.updatable_packages.contains (FlatpakBackend.get_default ());
         }
     }
 
@@ -330,8 +331,8 @@ public class AppCenterCore.Package : Object {
                 } else if (component.get_origin ().has_prefix ("ubuntu-")) {
                     return _("Ubuntu (non-curated)");
                 }
-            } else if (backend is FlatpakBackend) {
-                return _("%s (non-curated)").printf (component.get_origin ());
+            //  } else if (backend is FlatpakBackend) {
+            //      return _("%s (non-curated)").printf (component.get_origin ());
             } else if (backend is UbuntuDriversBackend) {
                 return _("Ubuntu Drivers");
             }

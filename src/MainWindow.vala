@@ -44,13 +44,19 @@ public class AppCenter.MainWindow : Gtk.ApplicationWindow {
 
     private uint configure_id;
     private int homepage_view_id;
+    private int category_view_id;
     private int installed_view_id;
 
+    private Gtk.Paned paned;
+
     private bool mimetype;
+
+    private CategorySidebar stack_sidebar;
 
     private const int VALID_QUERY_LENGTH = 3;
 
     public static Views.InstalledView installed_view { get; private set; }
+    public static Views.CategoryView category_view { get; private set; }
 
     public signal void homepage_loaded ();
 
@@ -80,7 +86,7 @@ public class AppCenter.MainWindow : Gtk.ApplicationWindow {
 
         search_entry.search_changed.connect (() => trigger_search ());
 
-        view_mode.notify["selected"].connect (on_view_mode_changed);
+        //  view_mode.notify["selected"].connect (on_view_mode_changed);
 
         search_entry.key_press_event.connect ((event) => {
             if (event.keyval == Gdk.Key.Escape) {
@@ -96,6 +102,7 @@ public class AppCenter.MainWindow : Gtk.ApplicationWindow {
         installed_view.get_apps.begin ();
 
         homepage.subview_entered.connect (view_opened);
+        category_view.subview_entered.connect (view_opened);
         installed_view.subview_entered.connect (view_opened);
         search_view.subview_entered.connect (view_opened);
 
@@ -107,7 +114,7 @@ public class AppCenter.MainWindow : Gtk.ApplicationWindow {
             });
         });
 
-        show.connect (on_view_mode_changed);
+        //  show.connect (on_view_mode_changed);
     }
 
     construct {
@@ -143,6 +150,7 @@ public class AppCenter.MainWindow : Gtk.ApplicationWindow {
         view_mode.margin_end = view_mode.margin_start = 12;
         view_mode.margin_bottom = view_mode.margin_top = 7;
         homepage_view_id = view_mode.append_text (_("Home"));
+        category_view_id = view_mode.append_text (C_("view", "Categories"));
         installed_view_id = view_mode.append_text (C_("view", "Installed"));
 
         updates_badge = new Gtk.Label ("!");
@@ -164,7 +172,7 @@ public class AppCenter.MainWindow : Gtk.ApplicationWindow {
         homepage_header.get_style_context ().add_class (Gtk.STYLE_CLASS_TITLE);
 
         custom_title_stack = new Gtk.Stack ();
-        //  custom_title_stack.add (view_mode_revealer);
+        custom_title_stack.add (view_mode_revealer);
         custom_title_stack.add (homepage_header);
         custom_title_stack.set_visible_child (view_mode_revealer);
 
@@ -178,7 +186,7 @@ public class AppCenter.MainWindow : Gtk.ApplicationWindow {
         /* HeaderBar */
         headerbar = new Gtk.HeaderBar ();
         headerbar.show_close_button = true;
-        headerbar.set_custom_title (custom_title_stack);
+        //  headerbar.set_custom_title (custom_title_stack);
         headerbar.pack_start (return_button);
         headerbar.pack_end (search_entry);
         headerbar.pack_end (spinner);
@@ -186,12 +194,14 @@ public class AppCenter.MainWindow : Gtk.ApplicationWindow {
         set_titlebar (headerbar);
 
         homepage = new Homepage ();
+        category_view = new Views.CategoryView ();
         installed_view = new Views.InstalledView ();
         search_view = new Views.SearchView ();
 
         stack = new Gtk.Stack ();
-        stack.transition_type = Gtk.StackTransitionType.SLIDE_LEFT_RIGHT;
+        stack.transition_type = Gtk.StackTransitionType.SLIDE_UP_DOWN;
         stack.add (homepage);
+        stack.add (category_view);
         stack.add (installed_view);
         stack.add (search_view);
 
@@ -202,8 +212,20 @@ public class AppCenter.MainWindow : Gtk.ApplicationWindow {
         grid.add (network_info_bar);
         grid.add (stack);
 
-        add (grid);
+        stack_sidebar = new CategorySidebar();
+        stack_sidebar.add_section("Popular", "starred-symbolic");
+        stack_sidebar.add_section("Categories", "preferences-other-symbolic");
+        stack_sidebar.add_section("Updates", "software-update-available-symbolic");
+        //  stack_sidebar.add_section("Installed", "gnome-software-symbolic");
 
+        paned = new Gtk.Paned(Gtk.Orientation.HORIZONTAL);
+        paned.add1(stack_sidebar);
+        paned.add2(grid);
+        add(paned);
+
+        //  add (grid);
+
+        stack_sidebar.changed.connect((id) => on_view_mode_changed (id));
         homepage.page_loaded.connect (() => homepage_loaded ());
     }
 
@@ -256,12 +278,7 @@ public class AppCenter.MainWindow : Gtk.ApplicationWindow {
     }
 
     public void show_update_badge (uint updates_number) {
-        if (updates_number == 0U) {
-            set_widget_visibility (updates_badge, false);
-        } else {
-            updates_badge.label = updates_number.to_string ();
-            set_widget_visibility (updates_badge, true);
-        }
+        stack_sidebar.show_update_badge(updates_number);
     }
 
     public void show_package (AppCenterCore.Package package) {
@@ -330,7 +347,7 @@ public class AppCenter.MainWindow : Gtk.ApplicationWindow {
         if (custom_search_placeholder != null) {
             search_entry.placeholder_text = custom_search_placeholder;
         } else {
-            search_entry.placeholder_text = _("Search Apps");
+            search_entry.placeholder_text = _("Search");
         }
 
         search_entry.sensitive = allow_search;
@@ -360,18 +377,23 @@ public class AppCenter.MainWindow : Gtk.ApplicationWindow {
         view.return_clicked ();
     }
 
-    private void on_view_mode_changed () {
+    private bool on_view_mode_changed (int id) {
         if (search_entry.text.length >= VALID_QUERY_LENGTH) {
             stack.visible_child = search_view;
             search_entry.sensitive = !search_view.viewing_package;
         } else {
-            if (view_mode.selected == homepage_view_id) {
+            if (id == homepage_view_id) {
                 stack.visible_child = homepage;
                 search_entry.sensitive = !homepage.viewing_package;
-            } else if (view_mode.selected == installed_view_id) {
+            } else if (id == installed_view_id) {
                 stack.visible_child = installed_view;
+                search_entry.sensitive = false;
+            } else if (id == category_view_id) {
+                stack.visible_child = category_view;
                 search_entry.sensitive = false;
             }
         }
+
+        return true;
     }
 }

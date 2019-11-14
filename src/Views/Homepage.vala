@@ -29,7 +29,6 @@ namespace AppCenter {
         private Gtk.FlowBox category_flow;
         private Gtk.ScrolledWindow category_scrolled;
         private string current_category;
-        private Gtk.Paned paned;
 
         public signal void page_loaded ();
 
@@ -107,7 +106,6 @@ namespace AppCenter {
 #endif
             category_flow = new Widgets.CategoryFlowBox ();
             category_flow.valign = Gtk.Align.START;
-            var stack_sidebar = new CategorySidebar();
 
             var grid = new Gtk.Grid ();
             grid.margin = 12;
@@ -123,19 +121,7 @@ namespace AppCenter {
             category_scrolled = new Gtk.ScrolledWindow (null, null);
             category_scrolled.add (grid);
 
-            //  add (category_scrolled);
-
-            stack_sidebar.add_section("Popular", "starred-symbolic");
-            stack_sidebar.add_section("Categories", "preferences-other-symbolic");
-            stack_sidebar.add_section("Updates", "software-update-available-symbolic");
-            stack_sidebar.add_section("Installed", "gnome-software-symbolic");
-
-            paned = new Gtk.Paned(Gtk.Orientation.HORIZONTAL);
-            //  paned.wide_handle = true;
-            paned.add1(stack_sidebar);
-            paned.add2(category_scrolled);
-
-            add(paned);
+            add (category_scrolled);
 
 #if HOMEPAGE
             var local_package = App.local_package;

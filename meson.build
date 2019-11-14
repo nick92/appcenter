@@ -23,7 +23,7 @@ packagekit = dependency ('packagekit-glib2')
 appstream = dependency ('appstream', version: '>=0.10.0')
 libsoup = dependency ('libsoup-2.4')
 json = dependency ('json-glib-1.0')
-flatpak = dependency ('flatpak')
+# flatpak = dependency ('flatpak')
 snapd = dependency ('snapd-glib')
 xml = dependency ('libxml-2.0')
 
@@ -37,7 +37,6 @@ dependencies = [
     appstream,
     libsoup,
     json,
-    flatpak,
     snapd,
     xml
 ]
