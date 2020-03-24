@@ -35,7 +35,7 @@ public class AppCenter.Widgets.CategoryFlowBox : Gtk.FlowBox {
             "Telephony",
             "VideoConference"
         }, "communication"));
-        add (get_category (_("Development"), "", {
+        add (get_category (_("Development"), "applications-engineering", {
             "Database",
             "Debugger",
             "Development",
@@ -46,7 +46,7 @@ public class AppCenter.Widgets.CategoryFlowBox : Gtk.FlowBox {
             "WebDevelopment"
         }, "development"));
         add (get_category (_("Education"), "", {"Education"}, "education"));
-        add (get_category (_("Finance"), "payment-card-symbolic", {
+        add (get_category (_("Finance"), "", {
             "Economy",
             "Finance"
         }, "finance"));
@@ -66,7 +66,7 @@ public class AppCenter.Widgets.CategoryFlowBox : Gtk.FlowBox {
             "SportsGame",
             "StrategyGame"
         }, "games"));
-        add (get_category (_("Graphics"), "", {
+        add (get_category (_("Graphics"), "applications-graphics", {
             "2DGraphics",
             "3DGraphics",
             "Graphics",
@@ -79,7 +79,7 @@ public class AppCenter.Widgets.CategoryFlowBox : Gtk.FlowBox {
             "Network",
             "P2P"
         }, "internet"));
-        add (get_category (_("Math, Science, & Engineering"), "", {
+        add (get_category (_("Math, Science, & Engineering"), "applications-science", {
             "ArtificialIntelligence",
             "Astronomy",
             "Biology",

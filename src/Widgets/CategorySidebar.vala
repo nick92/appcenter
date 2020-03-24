@@ -23,6 +23,8 @@ public class AppCenter.CategorySidebar : Gtk.ScrolledWindow {
     private Gtk.ListBox listbox;
     static Gtk.CssProvider? previous_css_provider = null;
     private Gtk.Label updates_badge;
+    private Gtk.Label installed_label;
+    private Gtk.Image installed_icon;
 
     construct {
         min_content_width = 250;
@@ -52,15 +54,20 @@ public class AppCenter.CategorySidebar : Gtk.ScrolledWindow {
         grid.column_spacing = 20;
         grid.row_spacing = 10;
         grid.add (icon);
-        grid.add (label);
 
-        if(name == "updates"){
+        if(name == "Installed"){
             updates_badge = new Gtk.Label ("!");
             updates_badge.halign = Gtk.Align.END;
             updates_badge.valign = Gtk.Align.START;
             updates_badge.get_style_context ().add_class ("badge");
             set_widget_visibility (updates_badge, false);
+            installed_label = label;
+            installed_icon = icon;
+            grid.add (installed_label);
             grid.add (updates_badge);
+        }
+        else {
+            grid.add (label);
         }
 
         listbox.add (grid);
@@ -73,6 +80,8 @@ public class AppCenter.CategorySidebar : Gtk.ScrolledWindow {
         } else {
             updates_badge.label = updates_number.to_string ();
             set_widget_visibility (updates_badge, true);
+            installed_label.set_text(_("Updates"));
+            installed_icon.set_from_icon_name("software-update-available-symbolic", Gtk.IconSize.MENU);
         }
     }
 }

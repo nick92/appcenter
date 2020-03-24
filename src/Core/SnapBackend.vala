@@ -29,7 +29,6 @@ public class AppCenterCore.SnapBackend : Backend, Object {
     private Snapd.Client client;
     private GenericArray<Snapd.Snap> installed;
 
-
     // This is OK as we're only using a single thread
     // This would have to be done differently if there were multiple workers in the pool
     private bool thread_should_run = true;
@@ -37,6 +36,8 @@ public class AppCenterCore.SnapBackend : Backend, Object {
     public bool working { public get; protected set; }
 
     private string local_metadata_path;
+
+    private const string SNAP_PACKAGE_ID = "%s;%s;amd64;installed:bionic-main";
 
     private bool worker_func () {
         while (thread_should_run) {
@@ -66,11 +67,11 @@ public class AppCenterCore.SnapBackend : Backend, Object {
     }
 
     construct {
-        worker_thread  = new Thread<bool> ("snap-worker", worker_func);
-        appstream_pool = new AppStream.Pool ();
-        package_list   = new Gee.HashMap<string, Package> (null, null);
-        client         = new Snapd.Client();
-        installed      = client.find_refreshable_sync();
+        worker_thread   = new Thread<bool> ("snap-worker", worker_func);
+        appstream_pool  = new AppStream.Pool ();
+        package_list    = new Gee.HashMap<string, Package> (null, null);
+        client          = new Snapd.Client();
+        installed       = new GenericArray<Snapd.Snap> ();
 
         appstream_pool.set_cache_flags (AppStream.CacheFlags.NONE);
 
@@ -81,14 +82,6 @@ public class AppCenterCore.SnapBackend : Backend, Object {
         );
 
         reload_appstream_pool ();
-    }
-
-    static construct {
-        try {
-            //  installation = new Flatpak.Installation.system ();
-        } catch (Error e) {
-            critical ("Unable to get system default snap installation : %s", e.message);
-        }
     }
 
     ~SnapBackend () {
@@ -117,6 +110,7 @@ public class AppCenterCore.SnapBackend : Backend, Object {
 
       try {
           appstream_pool.load ();
+          client.find_refreshable_sync ();
       } catch (Error e) {
           warning ("Errors found in snap appdata, some components may be incomplete/missing: %s", e.message);
       } finally {
@@ -130,98 +124,222 @@ public class AppCenterCore.SnapBackend : Backend, Object {
               var bundle = comp.get_bundle (AppStream.BundleKind.SNAP);
               if (bundle != null) {
                   var key = "%s/%s".printf (comp.get_origin (), bundle.get_id ());
+                  warning (key);
                   var package = package_list[key];
                   if (package != null) {
                       package.replace_component (comp);
                   } else {
                       package = new Package (this, comp);
                   }
-
                   new_package_list[key] = package;
               }
           });
 
           package_list = new_package_list;
       }
-  }
+    }
 
     public async bool update_package (Package package, owned ChangeInformation.ProgressCallback cb, Cancellable cancellable) throws GLib.Error {
         bool binstall = false;
+        var job_args = new UpdatePackageArgs ();
+        job_args.package = package;
+        job_args.cb = (owned)cb;
+        job_args.cancellable = cancellable;
 
-        try{
-            binstall = yield client.install2_async(Snapd.InstallFlags.CLASSIC, package.get_name(), null, null, cb, cancellable);
-        } catch (Error e) {
-            critical(e.message);
-            return(false);
+        var job = yield launch_job (Job.Type.UPDATE_PACKAGE, job_args);
+        if (job.error != null) {
+            throw job.error;
         }
 
-        return(binstall);
+        return job.result.get_boolean ();
+
+        //  try{
+        //      binstall = yield client.install2_async(Snapd.InstallFlags.CLASSIC, package.get_name(), null, null, cb, cancellable);
+        //  } catch (Error e) {
+        //      critical(e.message);
+        //      return(false);
+        //  }
+
+        //  return(binstall);
     }
 
-   public async bool remove_package (Package package, owned ChangeInformation.ProgressCallback cb, Cancellable cancellable) throws GLib.Error {
-      bool binstall = false;
+    private void remove_package_internal (Job job) {
+        var args = (RemovePackageArgs)job.args;
+        var package = args.package;
+        unowned ChangeInformation.ProgressCallback cb = args.cb;
+        var cancellable = args.cancellable;
 
-      try{
-         binstall = yield client.remove_async(package.get_name(), cb, cancellable);
-      } catch (Error e) {
-         critical(e.message);
-         return(false);
-      }
+        bool success = false;
 
-      return(binstall);
-   }
+        try{
+            success = client.remove_sync(package.component.get_name (), 
+            ((client, change, v) => {
+                switch (change.status) {
+                    case "Doing":
+                    case "Do":
+                        double progress_done = 0;
+                        double progress_total = 0;
+                        double progress = 0;
+        
+                        change.get_tasks().foreach ((task) => {
+                                progress_done += task.get_progress_done ();
+                                progress_total += task.get_progress_total ();
+                        });
+                        
+                        progress = (progress_done / progress_total);
+                        cb (true, _("Uninstalling"), progress, ChangeInformation.Status.RUNNING);
+                    break;
+                    case "Abort":
+                        cb (false, _("Cancelling"), 1.0f, ChangeInformation.Status.CANCELLED);
+                    break;
+                    case "Done":
+                        success = true;
+                    break;
+                    case "Error":
+                        cb (false, _("Cancelling"), 1.0f, ChangeInformation.Status.CANCELLED);
+                    break;
+                }
+            }), cancellable);
 
-   private void update_package_internal (Job job) {
-      var args = (UpdatePackageArgs)job.args;
-      var package = args.package;
-      unowned ChangeInformation.ProgressCallback cb = args.cb;
-      var cancellable = args.cancellable;
+        } catch (Error e) {
+            critical(e.message);
+            job.result = Value (typeof (bool));
+            job.result.set_boolean (false);
+            job.results_ready ();
+            return;
+        }
 
-      job.result = Value (typeof (bool));
-      job.result.set_boolean (success);
-      job.results_ready ();
-  }
+        job.result = Value (typeof (bool));
+        job.result.set_boolean (success);
+        job.results_ready ();
+    }
 
-   private void install_package_internal (Job job) {
-      var args = (InstallPackageArgs)job.args;
-      var package = args.package;
-      unowned ChangeInformation.ProgressCallback cb = args.cb;
-      var cancellable = args.cancellable;
+    public async bool remove_package (Package package, owned ChangeInformation.ProgressCallback cb, Cancellable cancellable) throws GLib.Error {
+        var job_args = new RemovePackageArgs ();
+        job_args.package = package;
+        job_args.cb = (owned)cb;
+        job_args.cancellable = cancellable;
 
-      bool success = false;
+        var job = yield launch_job (Job.Type.REMOVE_PACKAGE, job_args);
+        if (job.error != null) {
+            throw job.error;
+        }
 
-      var bundle = package.component.get_bundle (AppStream.BundleKind.FLATPAK);
-      if (bundle == null) {
-          job.result = Value (typeof (bool));
-          job.result.set_boolean (false);
-          job.results_ready ();
-          return;
-      }
+        return job.result.get_boolean ();  
+    }
 
-      try{
-         success = client.install2_sync(Snapd.InstallFlags.CLASSIC, package.get_name (), null, null, cb, cancellable);
-      } catch (Error e) {
-         critical(e.message);
-      }
+    private void update_package_internal (Job job) {
+        var args = (UpdatePackageArgs)job.args;
+        var package = args.package;
+        unowned ChangeInformation.ProgressCallback cb = args.cb;
+        var cancellable = args.cancellable;
+        bool success = false;
 
-      job.result = Value (typeof (bool));
-      job.result.set_boolean (success);
-      job.results_ready ();
-  }
+        try{
+            success = client.install2_sync(Snapd.InstallFlags.CLASSIC, package.get_name(), null, null, 
+            ((client, change, v) => {
+                switch (change.status) {
+                    case "Doing":
+                    case "Do":
+                        double progress_done = 0;
+                        double progress_total = 0;
+                        double progress = 0;
+        
+                        change.get_tasks().foreach ((task) => {
+                                progress_done += task.get_progress_done ();
+                                progress_total += task.get_progress_total ();
+                        });
+                        
+                        progress = (progress_done / progress_total);
+                        cb (true, _("Updating"), progress, ChangeInformation.Status.RUNNING);
+                    break;
+                    case "Abort":
+                        cb (false, _("Cancelling"), 1.0f, ChangeInformation.Status.CANCELLED);
+                    break;
+                    case "Done":
+                        success = true;
+                    break;
+                    case "Error":
+                        cb (false, _("Cancelling"), 1.0f, ChangeInformation.Status.CANCELLED);
+                    break;
+                }
+            }), cancellable);
+         } catch (Error e) {
+            critical(e.message);
+            job.result = Value (typeof (bool));
+            job.result.set_boolean (false);
+            job.results_ready ();
+         }
 
-   public async bool install_package (Package package, owned ChangeInformation.ProgressCallback cb, Cancellable cancellable) throws GLib.Error {
-      var job_args = new InstallPackageArgs ();
-      job_args.package = package;
-      job_args.cb = (owned)cb;
-      job_args.cancellable = cancellable;
+        job.result = Value (typeof (bool));
+        job.result.set_boolean (success);
+        job.results_ready ();
+    }
 
-      var job = yield launch_job (Job.Type.INSTALL_PACKAGE, job_args);
-      if (job.error != null) {
-         throw job.error;
-      }
+    private void install_package_internal (Job job) {
+        var args = (InstallPackageArgs)job.args;
+        var package = args.package;
+        unowned ChangeInformation.ProgressCallback cb = args.cb;
+        var cancellable = args.cancellable;
 
-      return job.result.get_boolean ();
-   }
+        bool success = false;
+
+        try{
+            success = client.install2_sync(Snapd.InstallFlags.CLASSIC, package.component.get_name (), null, null, 
+                ((client, change, v) => {
+                    switch (change.status) {
+                        case "Doing":
+                        case "Do":
+                            double progress_done = 0;
+                            double progress_total = 0;
+                            double progress = 0;
+            
+                            change.get_tasks().foreach ((task) => {
+                                    progress_done += task.get_progress_done ();
+                                    progress_total += task.get_progress_total ();
+                            });
+                            
+                            progress = (progress_done / progress_total);
+                            cb (true, _("Installing"), progress, ChangeInformation.Status.RUNNING);
+                        break;
+                        case "Abort":
+                            cb (false, _("Cancelling"), 1.0f, ChangeInformation.Status.CANCELLED);
+                        break;
+                        case "Done":
+                            success = true;
+                        break;
+                        case "Error":
+                            cb (false, _("Cancelling"), 1.0f, ChangeInformation.Status.CANCELLED);
+                        break;
+                    }
+                })
+            , cancellable);
+        } catch (Error e) {
+            critical(e.message);
+            job.result = Value (typeof (bool));
+            job.result.set_boolean (false);
+            job.results_ready ();
+            return;
+        }
+
+        job.result = Value (typeof (bool));
+        job.result.set_boolean (success);
+        job.results_ready ();
+    }
+
+    public async bool install_package (Package package, owned ChangeInformation.ProgressCallback cb, Cancellable cancellable) throws GLib.Error {
+        var job_args = new InstallPackageArgs ();
+        job_args.package = package;
+        job_args.cb = (owned)cb;
+        job_args.cancellable = cancellable;
+
+        var job = yield launch_job (Job.Type.INSTALL_PACKAGE, job_args);
+        if (job.error != null) {
+            throw job.error;
+        }
+
+        return job.result.get_boolean ();
+    }
 
     public async Gee.Collection<Package> get_installed_applications (Cancellable? cancellable = null) {
         var installed_apps = new Gee.HashSet<Package> ();
@@ -233,308 +351,301 @@ public class AppCenterCore.SnapBackend : Backend, Object {
         }
 
         try {
-            snaps = yield client.list_async(cancellable);
+            snaps = client.list_sync(cancellable);
         } catch (Error e) {
             critical ("Unable to get installed snaps: %s", e.message);
             return installed_apps;
         }
 
         for (int i = 0; i < snaps.length; i++) {
-         if (cancellable.is_cancelled ()) {
-             break;
-         }
+            if (cancellable.is_cancelled ()) {
+                break;
+            }
 
-         unowned Snapd.Snap snap = snaps[i];
-
-         var bundle_id = "%s/%s".printf (snap.channel, snap.name);
-         var package = package_list[bundle_id];
-         if (package != null) {
-             package.mark_installed ();
-             package.update_state ();
-             installed_apps.add (package);
-         }
-     }
+            unowned Snapd.Snap snap = snaps[i];
+            var package = convert_snap_to_component (snap);
+            if (package != null) {
+                package.mark_installed ();
+                package.update_state ();
+                installed_apps.add (package);
+                installed.add(snap);
+            }
+        }
         
-
         return(installed_apps);
     }
 
-   //  public async GLib.GenericArray <weak Snapd.Snap> getInstalledPackagesAsync()
-   //  {
-   //     GLib.GenericArray <weak Snapd.Snap> snaps = yield client.list_async(cancellable);
+    public Snapd.Snap get_specific_package_by_name (string searchWord = "")
+    {
+        GLib.GenericArray <weak Snapd.Snap> snaps = null;
 
-   //     return(snaps);
-   //  }
-
-   public Gee.Collection<Package> get_applications_for_category (AppStream.Category category) {
-      unowned GLib.GenericArray<AppStream.Component> components = category.get_components ();
-        if (components.length == 0) {
-            var category_array = new GLib.GenericArray<AppStream.Category> ();
-            category_array.add (category);
-            AppStream.utils_sort_components_into_categories (appstream_pool.get_components (), category_array, true);
-            components = category.get_components ();
+        try{
+            snaps = client.find_sync(Snapd.FindFlags.MATCH_NAME, searchWord, null, null);
+        } catch (Snapd.Error e) {
+            critical("Error on Snap: " + searchWord + " Message: " + e.message);
+            return(null);
         }
 
+        if(snaps == null)
+            return null;
+
+        return(snaps.get(0));
+    }
+
+    public Gee.Collection<Package> get_applications_for_category (AppStream.Category category) {
         var apps = new Gee.TreeSet<AppCenterCore.Package> ();
-        components.foreach ((comp) => {
-            var package = get_package_for_component_id (comp.get_id ());
-            if (package != null) {
-                apps.add (package);
-            }
+        var section = convertCategoryToSection(category.get_name());
+        GLib.GenericArray <weak Snapd.Snap> snaps = client.find_section_sync(Snapd.FindFlags.NONE, section, "", null, null);
+
+        warning(snaps.length.to_string());
+        if(snaps.length == 0)
+            return null;
+
+        snaps.foreach ((snap) => {
+            var package = convert_snap_to_component (snap);
+            apps.add (package);
         });
 
         return apps;
-      //  GLib.GenericArray <weak Snapd.Snap> snaps = client.find_section_sync(Snapd.FindFlags.NONE, convertCategoryToSection(section.name), null, null, cancellable);
+    }
 
-      //  return(snaps);
-   }
+    public Gee.Collection<Package> search_applications (string query, AppStream.Category? category) {
+        var apps = new Gee.TreeSet<AppCenterCore.Package> ();
+        GLib.GenericArray <weak Snapd.Snap> snaps = client.find_sync(Snapd.FindFlags.NONE, query, null, null);
 
-   public Gee.Collection<Package> search_applications (string query, AppStream.Category? category) {
-      var apps = new Gee.TreeSet<AppCenterCore.Package> ();
-      GLib.GenericArray<weak AppStream.Component> comps = appstream_pool.search (query);
-      if (category == null) {
-          comps.foreach ((comp) => {
-              var package = get_package_for_component_id (comp.get_id ());
-              if (package != null) {
-                  apps.add (package);
-              }
-          });
-      } else {
-          var cat_packages = get_applications_for_category (category);
-          comps.foreach ((comp) => {
-              var package = get_package_for_component_id (comp.get_id ());
-              if (package != null && package in cat_packages) {
-                  apps.add (package);
-              }
-          });
-      }
+        if (category == null) {
+            snaps.foreach ((snap) => {
+                var package = convert_snap_to_component (snap);
+                if (package != null) {
+                    apps.add (package);
+                }
+            });
+        } else {
+            var cat_packages = get_applications_for_category (category);
+            if(cat_packages ==  null)
+                return null;
+        }
 
-      return apps;
-  }
+        return apps;
+    }
 
-  public Gee.Collection<Package> search_applications_mime (string query) {
-   return new Gee.ArrayList<Package> ();
-}
+    public Gee.Collection<Package> search_applications_mime (string query) {
+        return new Gee.ArrayList<Package> ();
+    }
 
-public Package? get_package_for_component_id (string id) {
-   foreach (var package in package_list.values) {
-       if (package.component.id == id) {
-           return package;
-       } else if (package.component.id == id + ".desktop") {
-           return package;
-       }
-   }
+    public Package? get_package_for_component_id (string id) {
+        Package package = null;
+        Snapd.Snap snap = null;
 
-   return null;
-}
+        if (id.substring(0, 1) == "*") {
+            var component_id = id.substring(1);
+            snap = get_specific_package_by_name (component_id);
+        }
+        else {
+            return null;
+        }
 
-public Gee.Collection<Package> get_packages_for_component_id (string id) {
-   var packages = new Gee.ArrayList<Package> ();
-   foreach (var package in package_list.values) {
-       if (package.component.id == id) {
-           packages.add (package);
-       } else if (package.component.id == id + ".desktop") {
-           packages.add (package);
-       }
-   }
+        if(snap != null){
+            package = convert_snap_to_component(snap);            
+        }
 
-   return packages;
-}
+        return package;
+    }
 
-public Package? get_package_for_desktop_id (string desktop_id) {
-   foreach (var package in package_list.values) {
-       if (package.component.id == desktop_id ||
-           package.component.id + ".desktop" == desktop_id
-       ) {
-           return package;
-       }
-   }
+    public Gee.Collection<Package> get_packages_for_component_id (string id) {
+        var packages = new Gee.ArrayList<Package> ();
+        foreach (var package in package_list.values) {
+            if (package.component.id == id) {
+                packages.add (package);
+            } else if (package.component.id == id + ".desktop") {
+                packages.add (package);
+            }
+        }
 
-   return null;
-}
+        return packages;
+    }
 
-public async uint64 get_download_size (Package package, Cancellable? cancellable) throws GLib.Error {
-   var bundle = package.component.get_bundle (AppStream.BundleKind.FLATPAK);
-   if (bundle == null) {
-       return 0;
-   }
+    public Package? get_package_for_desktop_id (string desktop_id) {
+        foreach (var package in package_list.values) {
+            if (package.component.id == desktop_id ||
+                package.component.id + ".desktop" == desktop_id
+            ) {
+                return package;
+            }
+        }
 
-   var id = "%s/%s".printf (package.component.get_origin (), bundle.get_id ());
-   return yield get_download_size_by_id (id, cancellable);
-}
+        return null;
+    }
 
-public async uint64 get_download_size_by_id (string id, Cancellable? cancellable) throws GLib.Error {
-   return 0;
-}
+    public async uint64 get_download_size (Package package, Cancellable? cancellable) throws GLib.Error {
+        var bundle = package.component.get_bundle (AppStream.BundleKind.SNAP);
+        if (bundle == null) {
+            return 0;
+        }
 
-public async bool is_package_installed (Package package) throws GLib.Error {
-   var bundle = package.component.get_bundle (AppStream.BundleKind.SNAP);
-   if (bundle == null) {
-       return false;
-   }
+        var id = "%s/%s".printf (bundle.get_id (), Package.SNAP_ID_SUFFIX);
+        warning(id);
+        return yield get_download_size_by_id (id, cancellable);
+    }
 
-   var key = "%s/%s".printf (package.component.get_origin (), bundle.get_id ());
+    public async uint64 get_download_size_by_id (string id, Cancellable? cancellable) throws GLib.Error {
+        return 0;
+    }
 
-   for (int j = 0; j < installed.length; j++) {
-       unowned Snapd.Snap snap = installed[j];
+    public async bool is_package_installed (Package package) throws GLib.Error {
+        for (int j = 0; j < installed.length; j++) {
+            unowned Snapd.Snap snap = installed[j];
 
-       var bundle_id = "%s/%s".printf (snap.channel, snap.name);
-       if (key == bundle_id) {
-           return true;
-       }
-   }
+            var bundle_id = "%s/%s".printf(snap.get_id(), Package.SNAP_ID_SUFFIX);
+            if (package.component.id == bundle_id) {
+                return true;
+            }
+        }
 
-   return false;
-}
+        return false;
+    }
 
-public async PackageDetails get_package_details (Package package) throws GLib.Error {
-   var details = new PackageDetails ();
-   details.name = package.component.get_name ();
-   details.description = package.component.get_description ();
-   details.summary = package.component.get_summary ();
+    public async PackageDetails get_package_details (Package package) throws GLib.Error {
+        var details = new PackageDetails ();
+        details.name = package.component.get_name ();
+        details.description = package.component.get_description ();
+        details.summary = package.component.get_summary ();
 
-   var newest_version = package.get_newest_release ();
-   if (newest_version != null) {
-       details.version = newest_version.get_version ();
-   }
+        var newest_version = package.get_newest_release ();
+        if (newest_version != null) {
+            details.version = newest_version.get_version ();
+        }
 
-   return details;
-}
+        return details;
+    }
 
-public async bool refresh_cache (Cancellable? cancellable) throws GLib.Error {
-   var job_args = new RefreshCacheArgs ();
-   job_args.cancellable = cancellable;
+    public async bool refresh_cache (Cancellable? cancellable) throws GLib.Error {
+        var job_args = new RefreshCacheArgs ();
+        job_args.cancellable = cancellable;
 
-   var job = yield launch_job (Job.Type.REFRESH_CACHE, job_args);
-   if (job.error != null) {
-       throw job.error;
-   }
+        var job = yield launch_job (Job.Type.REFRESH_CACHE, job_args);
+        if (job.error != null) {
+            throw job.error;
+        }
 
-   return job.result.get_boolean ();
-}
+        return job.result.get_boolean ();
+    }
 
-public Gee.Collection<Package> get_packages_by_author (string author, int max) {
-   return new Gee.ArrayList<Package> ();
-}
+    public Gee.Collection<Package> get_packages_by_author (string author, int max) {
+        return new Gee.ArrayList<Package> ();
+    }
 
-private void refresh_cache_internal (Job job) {
-   var args = (RefreshCacheArgs)job.args;
-   var cancellable = args.cancellable;
+    private void refresh_cache_internal (Job job) {
+        var args = (RefreshCacheArgs)job.args;
+        var cancellable = args.cancellable;
 
-   reload_appstream_pool ();
+        reload_appstream_pool ();
 
-   job.result = Value (typeof (bool));
-   job.result.set_boolean (true);
-   job.results_ready ();
-}
+        job.result = Value (typeof (bool));
+        job.result.set_boolean (true);
+        job.results_ready ();
+    }
 
-   //  public GLib.GenericArray <weak Snapd.Snap> getFeaturedSnaps()
-   //  {
-   //     GLib.GenericArray <weak Snapd.Snap> snaps = client.find_section_sync(Snapd.FindFlags.NONE, "featured", null, null, cancellable);
+    public Package convert_snap_to_component(Snapd.Snap snap) {
+        var icon = new AppStream.Icon();
+        icon.set_name(snap.get_name());
 
-   //     return(snaps);
-   //  }
+        if (snap.get_icon() != null)
+        {
+            icon.set_url(snap.get_icon());
+            icon.set_kind(AppStream.IconKind.REMOTE);
+        }
+        else
+        {
+            // fix to set icon path as Snapd client get_icon returns error
+            icon.set_filename("/snap/" + snap.get_name() + "/current/usr/share/pixmaps/" + snap.get_name() + ".png");
+            icon.set_kind(AppStream.IconKind.LOCAL);
+        }
 
-   //  public GLib.GenericArray <weak Snapd.Snap> getRefreshablePackages()
-   //  {
-   //     GLib.GenericArray <weak Snapd.Snap> snaps = client.find_refreshable_sync();
+        var snap_component = new AppStream.Component();
+        snap_component.id              =    "%s/%s".printf(snap.get_id(), Package.SNAP_ID_SUFFIX);
+        snap_component.name            =    _(snap.get_name ());
+        snap_component.developer_name  =    _(snap.get_developer ());
+        snap_component.summary         =    _(snap.get_summary ());
+        snap_component.description     =    _(snap.get_description ());
+        snap_component.project_license =    _(snap.get_license ());
 
-   //     return(snaps);
-   //  }
+        snap.get_media().foreach ((media) => {
+            if(media.get_media_type () == "screenshot"){
+                var image = new AppStream.Image();
+                var snap_screenshot = new AppStream.Screenshot();
+                image.set_url(media.get_url());
+                image.set_kind(AppStream.ImageKind.SOURCE);
 
-   //  public async GLib.GenericArray <weak Snapd.Snap> getRefreshablePackagesAsync()
-   //  {
-   //     GLib.GenericArray <weak Snapd.Snap> snaps = yield client.find_refreshable_async(cancellable);
+                snap_screenshot.add_image(image);
+                snap_component.add_screenshot(snap_screenshot);
+            }
+        });
+        snap_component.add_icon(icon);
 
-   //     return(snaps);
-   //  }
+        var package = new Package (this, snap_component);
+        package.name = snap.get_title();
+        package.latest_version = snap.version;
 
-   //  public GLib.GenericArray <weak Snapd.Alias> getSnapAlias()
-   //  {
-   //     GLib.GenericArray <weak Snapd.Alias> alias = client.get_aliases_sync(null);
+        //  warning(snap.get_status ().to_string ());
+        if(snap.get_status () == Snapd.SnapStatus.ACTIVE)
+            package.mark_installed ();
 
-   //     return(alias);
-   //  }
+        package.update_state ();
+        //  var control = new Pk.Control();
+        //  control.updates_changed.connect(updates_state);
 
-   //  public GLib.GenericArray <weak Snapd.Snap> getPackageByName(string searchWord = "")
-   //  {
-   //     try{
-   //        GLib.GenericArray <weak Snapd.Snap> snaps = client.find_sync(Snapd.FindFlags.NONE, searchWord, null, cancellable);
-   //        return(snaps);
-   //     } catch (Snapd.Error e) {
-   //        critical(e.message);
-   //        return(null);
-   //     }
+        return package;
+    }
 
-   //     return(null);
-   //  }
+    private string convertCategoryToSection(string category)
+    {
+        switch (category)
+        {
+            case "Audio":
+                return("music-and-audio");
 
-   //  public GLib.GenericArray <weak Snapd.Snap> getSpecificPackageByName(string searchWord = "")
-   //  {
-   //     try{
-   //        GLib.GenericArray <weak Snapd.Snap> snaps = client.find_sync(Snapd.FindFlags.MATCH_NAME, searchWord, null, cancellable);
-   //        return(snaps);
-   //     } catch (Snapd.Error e) {
-   //        critical("Error on Snap: " + searchWord + " Message: " + e.message);
-   //        return(null);
-   //     }
+            case "Development":
+                return("development");
 
-   //     return(null);
-   //  }
+            case "Communication":
+                return("social");
 
-   //  private string convertCategoryToSection(string category)
-   //  {
-   //     switch (category)
-   //     {
-   //     case "Audio":
-   //        return("music");
+            case "Accessories":
+                return("utilities");
 
-   //        break;
+            case "Office":
+                return("productivity");
 
-   //     case "Development":
-   //        return("developers");
+            case "Internet":
+                return("social-networking");
 
-   //        break;
+            case "Science":
+                return("science");
+            
+            case "Finance":
+                return("finance");
 
-   //     case "Accessories":
-   //        return("utilities");
+            case "Education":
+                return("education");
 
-   //        break;
+            case "Accessibility":
+            case "System":
+                return("utilities");
 
-   //     case "Office":
-   //        return("finance");
+            case "Graphics":
+                return("art-and-design");
 
-   //        break;
+            case "Games":
+                return("games");
 
-   //     case "System":
-   //        return("utilities");
+            case "Video":
+                return("photo-and-video");
 
-   //        break;
-
-   //     case "Internet":
-   //        return("social-networking");
-
-   //        break;
-
-   //     case "Science":
-   //        return("poductivity");
-
-   //        break;
-
-   //     case "Education":
-   //        return("poductivity");
-
-   //        break;
-
-   //     case "Accessibility":
-   //        return("utilities");
-
-   //        break;
-
-   //     default:
-   //        return(category);
-   //     }
-   //  }
+            default:
+                return(category);
+        }
+    }
 
     private static GLib.Once<SnapBackend> instance;
     public static unowned SnapBackend get_default () {

@@ -21,8 +21,8 @@
 
 using AppCenterCore;
 
-const int NUM_PACKAGES_IN_BANNER = 5;
-const int NUM_PACKAGES_IN_CAROUSEL = 5;
+const int NUM_PACKAGES_IN_BANNER = 8;
+const int NUM_PACKAGES_IN_CAROUSEL = 8;
 
 namespace AppCenter {
     public class Homepage : View {
@@ -64,7 +64,7 @@ namespace AppCenter {
                 }
             });
 
-            var recently_updated_label = new Gtk.Label (_("Recently Updated"));
+            var recently_updated_label = new Gtk.Label (_("Useful"));
             recently_updated_label.get_style_context ().add_class (Granite.STYLE_CLASS_H4_LABEL);
             recently_updated_label.xalign = 0;
             recently_updated_label.margin_start = 10;
@@ -80,7 +80,7 @@ namespace AppCenter {
             recently_updated_revealer = new Gtk.Revealer ();
             recently_updated_revealer.add (recently_updated_grid );
 
-            var trending_label = new Gtk.Label (_("Trending"));
+            var trending_label = new Gtk.Label (_("Most Popular"));
             trending_label.get_style_context ().add_class (Granite.STYLE_CLASS_H4_LABEL);
             trending_label.xalign = 0;
             trending_label.margin_start = 10;
@@ -243,11 +243,11 @@ namespace AppCenter {
                 if (packages_for_banner.size >= NUM_PACKAGES_IN_CAROUSEL) {
                     break;
                 }
-
+                
                 var candidate_package = AppCenterCore.Client.get_default ().get_package_for_component_id (package);
-
                 if (candidate_package != null) {
                     candidate_package.update_state ();
+
                     if (candidate_package.state == AppCenterCore.Package.State.NOT_INSTALLED) {
                         packages_for_banner.add (candidate_package);
                     }
@@ -304,6 +304,12 @@ namespace AppCenter {
                 current_category = null;
                 subview_entered (null, true);
             }
+        }
+
+        public void reset () {
+            set_visible_child (category_scrolled);
+            viewing_package = false;
+            current_category = null;
         }
 
         private void show_app_list_for_category (AppStream.Category category) {

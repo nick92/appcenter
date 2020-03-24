@@ -153,15 +153,15 @@ public class AppCenter.MainWindow : Gtk.ApplicationWindow {
         category_view_id = view_mode.append_text (C_("view", "Categories"));
         installed_view_id = view_mode.append_text (C_("view", "Installed"));
 
-        updates_badge = new Gtk.Label ("!");
-        updates_badge.halign = Gtk.Align.END;
-        updates_badge.valign = Gtk.Align.START;
-        updates_badge.get_style_context ().add_class ("badge");
-        set_widget_visibility (updates_badge, false);
+        //  updates_badge = new Gtk.Label ("!");
+        //  updates_badge.halign = Gtk.Align.END;
+        //  updates_badge.valign = Gtk.Align.START;
+        //  updates_badge.get_style_context ().add_class ("badge");
+        //  set_widget_visibility (updates_badge, false);
 
         var view_mode_overlay = new Gtk.Overlay ();
         view_mode_overlay.add (view_mode);
-        view_mode_overlay.add_overlay (updates_badge);
+        //  view_mode_overlay.add_overlay (updates_badge);
 
         view_mode_revealer = new Gtk.Revealer ();
         view_mode_revealer.reveal_child = true;
@@ -215,8 +215,8 @@ public class AppCenter.MainWindow : Gtk.ApplicationWindow {
         stack_sidebar = new CategorySidebar();
         stack_sidebar.add_section("Popular", "starred-symbolic");
         stack_sidebar.add_section("Categories", "preferences-other-symbolic");
-        stack_sidebar.add_section("Updates", "software-update-available-symbolic");
-        //  stack_sidebar.add_section("Installed", "gnome-software-symbolic");
+        //  stack_sidebar.add_section("Updates", "software-update-available-symbolic");
+        stack_sidebar.add_section("Installed", "gnome-software-symbolic");
 
         paned = new Gtk.Paned(Gtk.Orientation.HORIZONTAL);
         paned.add1(stack_sidebar);
@@ -385,15 +385,18 @@ public class AppCenter.MainWindow : Gtk.ApplicationWindow {
             if (id == homepage_view_id) {
                 stack.visible_child = homepage;
                 search_entry.sensitive = !homepage.viewing_package;
+                search_entry.sensitive = true;
+                homepage.reset();
             } else if (id == installed_view_id) {
                 stack.visible_child = installed_view;
                 search_entry.sensitive = false;
+                installed_view.reset();
             } else if (id == category_view_id) {
                 stack.visible_child = category_view;
                 search_entry.sensitive = false;
+                category_view.reset();
             }
         }
-
         return true;
     }
 }

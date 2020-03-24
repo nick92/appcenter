@@ -376,6 +376,9 @@ namespace AppCenter.Views {
             footer_grid.margin = 12;
             footer_grid.width_request = 800;
 
+            var app_store_source = new UrlButton (_(package.is_snap ? _("Snap") : _("Debian")), "https://snapcraft.io/"+package.get_name(), "package-x-generic-symbolic");
+            footer_grid.add (app_store_source);
+
             var project_license = package.component.project_license;
             if (project_license != null) {
                 string? license_copy = null;

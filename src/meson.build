@@ -85,6 +85,14 @@ if get_option('sharing')
     args += '--define=SHARING'
 endif
 
+if get_option('flatpak')
+    args += '--define=FLATPAK'
+endif
+
+if get_option('snap')
+    args += '--define=SNAP'
+endif
+
 executable(
     meson.project_name(),
     appcenter_files,

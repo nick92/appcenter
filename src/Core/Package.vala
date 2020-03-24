@@ -76,6 +76,7 @@ public class AppCenterCore.Package : Object {
 
     public const string OS_UPDATES_ID = "xxx-os-updates";
     public const string LOCAL_ID_SUFFIX = ".appcenter-local";
+    public const string SNAP_ID_SUFFIX = ".appcenter-snap";
     public const string DEFAULT_PRICE_DOLLARS = "1";
 
     public AppStream.Component component { get; protected set; }
@@ -266,6 +267,12 @@ public class AppCenterCore.Package : Object {
         }
     }
 
+    public bool is_snap {
+        get {
+            return (backend is SnapBackend);
+        }
+    }
+
     private string? _author = null;
     public string author {
         get {
@@ -333,6 +340,8 @@ public class AppCenterCore.Package : Object {
                 }
             //  } else if (backend is FlatpakBackend) {
             //      return _("%s (non-curated)").printf (component.get_origin ());
+            } else if (backend is SnapBackend) {
+                return _("%s (non-curated)").printf (component.get_origin ());
             } else if (backend is UbuntuDriversBackend) {
                 return _("Ubuntu Drivers");
             }
@@ -341,7 +350,7 @@ public class AppCenterCore.Package : Object {
         }
     }
 
-    private string? name = null;
+    public string? name = null;
     public string? description = null;
     private string? summary = null;
     private string? color_primary = null;
@@ -353,7 +362,6 @@ public class AppCenterCore.Package : Object {
         private get { return _latest_version; }
         internal set { _latest_version = convert_version (value); }
     }
-
     private PackageDetails? backend_details = null;
     private AppInfo? app_info;
     private bool app_info_retrieved = false;

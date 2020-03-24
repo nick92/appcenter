@@ -23,7 +23,7 @@ public class AppCenter.Views.InstalledView : View {
     private bool refresh_running = false;
 
     private AppListUpdateView app_list_view;
-
+ 
     construct {
         refresh_cancellable = new Cancellable ();
 
@@ -59,6 +59,11 @@ public class AppCenter.Views.InstalledView : View {
             set_visible_child (app_list_view);
             subview_entered (null, false);
         }
+    }
+
+    public void reset () {
+        set_visible_child (app_list_view);
+        subview_entered (null, false);
     }
 
     public async void get_apps () {

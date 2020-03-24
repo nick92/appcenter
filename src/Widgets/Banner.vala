@@ -98,7 +98,7 @@ namespace AppCenter.Widgets {
             }
         }
 
-        private string _background_color = "#68758e";
+        private string _background_color = DEFAULT_BANNER_COLOR_PRIMARY;
         public string background_color {
             get {
                 return _background_color;
@@ -107,7 +107,7 @@ namespace AppCenter.Widgets {
                 on_any_color_change ();
             }
         }
-        private string _foreground_color = "white";
+        private string _foreground_color = DEFAULT_BANNER_COLOR_PRIMARY_TEXT;
         public string foreground_color {
             get {
                 return _foreground_color;
@@ -155,8 +155,11 @@ namespace AppCenter.Widgets {
         }
 
         public void set_default_brand () {
-            background_color = "#FB9B2E";
-            foreground_color = "#061B23";
+            //  background_color = "#FB9B2E";
+            //  foreground_color = "#061B23";
+            background_color = DEFAULT_BANNER_COLOR_PRIMARY;
+            foreground_color = DEFAULT_BANNER_COLOR_PRIMARY_TEXT;
+
             //  foreground_color = DEFAULT_BANNER_COLOR_PRIMARY_TEXT;
 
             brand_widget = new BannerWidget (null);

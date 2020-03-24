@@ -109,4 +109,12 @@ public class AppCenter.Views.CategoryView : View {
             subview_entered (null, true);
         }
     }
+
+    public void reset () {
+        set_visible_child (category_scrolled);
+        viewing_package = false;
+        currently_viewed_category = null;
+        current_category = null;
+        subview_entered (null, true);
+    }
 }

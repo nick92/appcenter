@@ -5,4 +5,6 @@ option('icon', type : 'string', value : 'system-software-install', description :
 option('name', type : 'string', value : 'AppHive', description : 'The name of the application')
 option('payments', type : 'boolean', value : false, description : 'Enable payment features and display paid apps')
 option('sharing', type : 'boolean', value : true, description : 'Display sharing features, i.e. copyable URLs to apps')
+option('flatpak', type : 'boolean', value : false, description : 'Include Flatpak packages')
+option('snap', type : 'boolean', value : true, description : 'Include Snap packages')
 
