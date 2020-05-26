@@ -101,25 +101,16 @@ public class AppCenterCore.Client : Object {
             {
                package_list[pkg_name] = package;
             }
-         })
-         {
-            ;
-         }
+         });
 
          snapdClient.getRefreshablePackages().foreach ((snap) => {
             update_snap_packages.add(snap);
-         })
-         {
-            ;
-         }
+         });
 
          snapdClient.getInstalledPackages().foreach ((snap) => {
             var snap_package = convert_snap_to_component(snap);
             package_list[snap_package.component.id] = snap_package;
-         })
-         {
-            ;
-         }
+         });
       } catch (Error e) {
          critical(e.message);
       }
@@ -223,10 +214,7 @@ public class AppCenterCore.Client : Object {
          packages_ids = {};
          package_array.foreach ((package) => {
             packages_ids += package.package_id;
-         })
-         {
-            ;
-         }
+         });
 
          packages_ids += null;
 
@@ -303,10 +291,7 @@ public class AppCenterCore.Client : Object {
          packages_ids = {};
          results.get_package_array().foreach ((package) => {
             packages_ids += package.package_id;
-         })
-         {
-            ;
-         }
+         });
 
          results = yield client.remove_packages_async(packages_ids, true, true, cancellable, cb);
 
@@ -415,10 +400,7 @@ public class AppCenterCore.Client : Object {
             populate_package(snap_package, snap_package.find_package());
             packages.add(snap_package);
          }
-      })
-      {
-         ;
-      }
+      });
 
       return(packages);
    }
@@ -442,10 +424,7 @@ public class AppCenterCore.Client : Object {
          var snap_package = convert_snap_to_component(snap);
          populate_package(snap_package, snap_package.find_package());
          packages.add(snap_package);
-      })
-      {
-         ;
-      }
+      });
 
       return(packages);
    }
@@ -476,10 +455,7 @@ public class AppCenterCore.Client : Object {
          {
             apps.add(package);
          }
-      })
-      {
-         ;
-      }
+      });
 
       snapdClient.getPackagesForSection(category).foreach ((snap) => {
          var package = convert_snap_to_component(snap);
@@ -487,10 +463,7 @@ public class AppCenterCore.Client : Object {
          {
             apps.add(package);
          }
-      })
-      {
-         ;
-      }
+      });
 
       return(apps);
    }
@@ -510,20 +483,15 @@ public class AppCenterCore.Client : Object {
             {
                apps.add(package);
             }
-         })
-         {
-            ;
-         }
+         });
+
          snaps.foreach ((snap) => {
             var package = convert_snap_to_component(snap);
             if (package != null)
             {
                apps.add(package);
             }
-         })
-         {
-            ;
-         }
+         });
       }
       else
       {
@@ -534,10 +502,7 @@ public class AppCenterCore.Client : Object {
             {
                apps.add(package);
             }
-         })
-         {
-            ;
-         }
+         });
       }
 
       return(apps);
@@ -570,10 +535,7 @@ public class AppCenterCore.Client : Object {
             package.group = details.group;
             package.size = details.size;
             package.url = details.url;
-         })
-         {
-            ;
-         }
+         });
       }
 
       task_count--;
@@ -634,10 +596,7 @@ public class AppCenterCore.Client : Object {
                package.change_information.changes.clear();
                package.change_information.details.clear();
             }
-         })
-         {
-            ;
-         }
+         });
 
          if (os_count == 0)
          {
@@ -693,10 +652,7 @@ public class AppCenterCore.Client : Object {
             } catch (Error e) {
                critical(e.message);
             }
-         })
-         {
-            ;
-         }
+         });
 
          os_updates.update_state();
       } catch (Error e) {
@@ -722,10 +678,7 @@ public class AppCenterCore.Client : Object {
          {
             os_update_found = true;
          }
-      })
-      {
-         ;
-      }
+      });
 
       uint size = result_comp.size;
       if (os_update_found)
@@ -841,10 +794,7 @@ public class AppCenterCore.Client : Object {
 
          results.get_package_array().foreach ((pk_package) => {
             installed.add(pk_package);
-         })
-         {
-            ;
-         }
+         });
 
          /*GLib.GenericArray<weak Snapd.Snap> snapResult = yield snapdClient.getInstalledPackagesAsync ();
           * snapResult.foreach ((snap) => {
@@ -869,10 +819,7 @@ public class AppCenterCore.Client : Object {
          Pk.Results results = client.get_packages_sync(filter, null, (prog, type) => {});
          results.get_package_array().foreach ((pk_package) => {
             installed.add(pk_package);
-         })
-         {
-            ;
-         }
+         });
 
          /*GLib.GenericArray<weak Snapd.Snap> snapResult = snapdClient.getInstalledPackages ();
           * snapResult.foreach ((snap) => {
@@ -979,10 +926,7 @@ public class AppCenterCore.Client : Object {
 
          snap_screenshot.add_image(image);
          snap_component.add_screenshot(snap_screenshot);
-      })
-      {
-         ;
-      }
+      });
 
       snap_component.add_icon(icon);
 

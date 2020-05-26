@@ -239,16 +239,13 @@ namespace AppCenter {
         category_list.add(new Category("Games", "applications-games"));
 
         category_list.foreach ((category) => {
-              stack_sidebar.add_section(category.name, category.icon_name);
-              return(true);
-          })
-        {
-          ;
-        }
+          stack_sidebar.add_section(category.name, category.icon_name);
+          return(true);
+        });
 
         stack_sidebar.changed.connect((id) => {
-              stack_featured.set_visible_child_name(category_list.get(id).name);
-          });
+          stack_featured.set_visible_child_name(category_list.get(id).name);
+        });
         //stack_sidebar.stack = stack_featured;
 
         //grid_bottom.attach (box_button_view, 0, 1, 1, 1);
@@ -322,12 +319,9 @@ namespace AppCenter {
         if (!packages_for_carousel.is_empty)
         {
           packages_for_carousel.foreach ((banner_package) => {
-                useful_carousel.add_package(banner_package);
-                return(true);
-              })
-          {
-              ;
-          }
+            useful_carousel.add_package(banner_package);
+            return(true);
+          });
           useful_revealer.reveal_child = true;
         }
         useful_carousel.package_activated.connect(show_package);
@@ -368,12 +362,9 @@ namespace AppCenter {
         if (!packages_for_carousel.is_empty)
         {
           packages_for_carousel.foreach ((banner_package) => {
-                office_carousel.add_package(banner_package);
-                return(true);
-              })
-          {
-              ;
-          }
+            office_carousel.add_package(banner_package);
+            return(true);
+          });
           office_revealer.reveal_child = true;
         }
         office_carousel.package_activated.connect(show_package);
@@ -413,12 +404,9 @@ namespace AppCenter {
         if (!packages_for_carousel.is_empty)
         {
           packages_for_carousel.foreach ((banner_package) => {
-                development_carousel.add_package(banner_package);
-                return(true);
-              })
-          {
-              ;
-          }
+            development_carousel.add_package(banner_package);
+            return(true);
+          });
           development_revealer.reveal_child = true;
         }
         development_carousel.package_activated.connect(show_package);
@@ -458,9 +446,9 @@ namespace AppCenter {
         if (!packages_for_carousel.is_empty)
         {
           packages_for_carousel.foreach ((banner_package) => {
-                multimedia_carousel.add_package(banner_package);
-                return(true);
-            });
+              multimedia_carousel.add_package(banner_package);
+              return(true);
+          });
           multimedia_revealer.reveal_child = true;
         }
         multimedia_carousel.package_activated.connect(show_package);
@@ -500,12 +488,9 @@ namespace AppCenter {
         if (!packages_for_carousel.is_empty)
         {
           packages_for_carousel.foreach ((banner_package) => {
-                games_carousel.add_package(banner_package);
-                return(true);
-              })
-          {
-              ;
-          }
+            games_carousel.add_package(banner_package);
+            return(true);
+          });
           games_revealer.reveal_child = true;
         }
         games_carousel.package_activated.connect(show_package);

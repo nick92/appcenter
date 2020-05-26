@@ -64,10 +64,7 @@ public class AppCenterCore.UpdateManager : Object {
          string[] packages_array = {};
          update_results.get_package_array().foreach ((pk_package) => {
             packages_array += pk_package.get_id();
-         })
-         {
-            ;
-         }
+         });
 
          if (packages_array.length > 0)
          {
@@ -77,10 +74,7 @@ public class AppCenterCore.UpdateManager : Object {
 
             details_results.get_details_array().foreach ((details) => {
                update_results.add_details(details);
-            })
-            {
-               ;
-            }
+            });
          }
 
          return(update_results);
