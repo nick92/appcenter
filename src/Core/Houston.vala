@@ -17,8 +17,7 @@
 */
 
 public class AppCenterCore.Houston : Object {
-    //  private const string HOUSTON_API_URL = "https://nick92-appstar.herokuapp.com";
-    private const string HOUSTON_API_URL = "http://localhost:9000";
+    private const string HOUSTON_API_URL = "https://nick92-appstar.herokuapp.com";
 
     private Soup.Session session;
 
