@@ -397,7 +397,6 @@ public class AppCenterCore.SnapBackend : Backend, Object {
         var section = convertCategoryToSection(category.get_name());
         GLib.GenericArray <weak Snapd.Snap> snaps = client.find_section_sync(Snapd.FindFlags.NONE, section, "", null, null);
 
-        warning(snaps.length.to_string());
         if(snaps.length == 0)
             return null;
 

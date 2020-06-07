@@ -32,6 +32,7 @@ namespace AppCenter {
         public AppCenterCore.Package package { get; construct set; }
         protected bool show_uninstall { get; set; default = true; }
         protected bool show_open { get; set; default = true; }
+        public bool show_star { get; set; default = true; }
 
         protected Gtk.Overlay image;
         protected Gtk.Image inner_image;
@@ -43,6 +44,7 @@ namespace AppCenter {
         protected Widgets.HumbleButton action_button;
         protected Gtk.Button uninstall_button;
         protected Gtk.Button open_button;
+        protected Widgets.StarButton star_button;
 
         protected Gtk.Grid progress_grid;
         protected Gtk.Grid button_grid;
@@ -54,6 +56,7 @@ namespace AppCenter {
         private Gtk.Revealer open_button_revealer;
         private Gtk.Revealer uninstall_button_revealer;
         private Gtk.Revealer action_button_revealer;
+        private Gtk.Revealer star_button_revealer;
         private Settings settings;
         private Mutex action_mutex = Mutex ();
         private Cancellable action_cancellable = new Cancellable ();
@@ -126,6 +129,7 @@ namespace AppCenter {
             package_summary = new Gtk.Label (null);
 
             action_button = new Widgets.HumbleButton ();
+            action_button.margin_end = 12;
 
             action_button_revealer = new Gtk.Revealer ();
             action_button_revealer.transition_type = Gtk.RevealerTransitionType.SLIDE_LEFT;
@@ -171,12 +175,18 @@ namespace AppCenter {
             uninstall_button.clicked.connect (() => uninstall_clicked.begin ());
 
             open_button = new Gtk.Button.with_label (_("Open"));
-
+            open_button.margin_end = 12;
             open_button_revealer = new Gtk.Revealer ();
             open_button_revealer.transition_type = Gtk.RevealerTransitionType.SLIDE_LEFT;
             open_button_revealer.add (open_button);
 
             open_button.clicked.connect (launch_package_app);
+
+            star_button = new Widgets.StarButton (package);
+
+            star_button_revealer = new Gtk.Revealer ();
+            star_button_revealer.transition_type = Gtk.RevealerTransitionType.SLIDE_LEFT;
+            star_button_revealer.add (star_button);
 
             button_grid = new Gtk.Grid ();
             button_grid.valign = Gtk.Align.CENTER;
@@ -186,6 +196,7 @@ namespace AppCenter {
             button_grid.add (uninstall_button_revealer);
             button_grid.add (action_button_revealer);
             button_grid.add (open_button_revealer);
+            button_grid.add (star_button_revealer);
 
             progress_bar = new Gtk.ProgressBar ();
             progress_bar.show_text = true;
@@ -306,6 +317,8 @@ namespace AppCenter {
             if (action_stack.get_child_by_name ("buttons") != null) {
                 action_stack.visible_child_name = "buttons";
             }
+
+            star_button_revealer.reveal_child = show_star;
 
             switch (package.state) {
                 case AppCenterCore.Package.State.NOT_INSTALLED:

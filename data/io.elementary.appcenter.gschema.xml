@@ -31,5 +31,10 @@
       <summary>Display content warning for explicit apps</summary>
       <description>Whether to display a warning dialog when attempting to install apps that are explicit according to their OARS data</description>
     </key>
+    <key type="as" name="stared-apps">
+      <default>[]</default>
+      <summary>List of applications stared by the user</summary>
+      <description>A list of appstream IDs which have been stared</description>
+    </key>
   </schema>
 </schemalist>
