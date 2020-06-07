@@ -186,6 +186,8 @@ namespace AppCenter {
             var houston = AppCenterCore.Houston.get_default ();
             var packages_for_banner = new Gee.LinkedList<AppCenterCore.Package> ();
 
+            yield houston.get_app_stars (); 
+
             var newest_ids = yield houston.get_app_ids ("/packages/useful");
             foreach (var package in newest_ids) {
                 if (packages_for_banner.size >= NUM_PACKAGES_IN_BANNER) {

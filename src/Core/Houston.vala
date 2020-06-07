@@ -45,6 +45,43 @@ public class AppCenterCore.Houston : Object {
         yield;
     }
 
+    public async void get_app_stars()
+    {
+        var uri = HOUSTON_API_URL + "/packages/get_all_stars";
+        var app_list = new Gee.ArrayList<AppStar>();
+        var app_cache = StarCache.new_cache ();
+
+        debug ("Getting all stars");
+        var message = new Soup.Message("GET", uri);
+        session.queue_message(message, (sess, mess) => {
+            try {
+                var res = process_response((string)mess.response_body.data);
+                if (res.has_member("result"))
+                {
+                    var data = res.get_array_member("result");
+
+                    foreach (var id in data.get_elements())
+                    {
+                        var name = id.get_object().get_string_member("app_name");
+                        var stars = id.get_object().get_int_member("stars");
+
+                        var app_start = new AppStar(name, stars);
+
+                        app_list.add(app_start);
+                    }
+
+                    app_cache.add_apps(app_list);
+                }
+            } catch (Error e) {
+                warning("Houston: %s", e.message);
+            }
+
+            Idle.add(get_app_stars.callback);
+        });
+
+        yield;
+    }
+
     private Json.Object process_response (string res) throws Error {
         var parser = new Json.Parser ();
         parser.load_from_data (res, -1);
@@ -65,36 +102,36 @@ public class AppCenterCore.Houston : Object {
     }
 
     public async string[] get_app_ids(string endpoint)
-   {
-      var uri = HOUSTON_API_URL + endpoint;
+    {
+        var uri = HOUSTON_API_URL + endpoint;
 
-      string[] app_ids = {};
+        string[] app_ids = {};
 
-      debug("Requesting newest applications from %s", uri);
+        debug("Requesting newest applications from %s", uri);
 
-      var message = new Soup.Message("GET", uri);
-      session.queue_message(message, (sess, mess) => {
-         try {
-            var res = process_response((string)mess.response_body.data);
-            if (res.has_member("data"))
-            {
-               var data = res.get_array_member("data");
+        var message = new Soup.Message("GET", uri);
+        session.queue_message(message, (sess, mess) => {
+            try {
+                var res = process_response((string)mess.response_body.data);
+                if (res.has_member("data"))
+                {
+                    var data = res.get_array_member("data");
 
-               foreach (var id in data.get_elements())
-               {
-                  app_ids += id.get_object().get_string_member("Appname");
-               }
+                    foreach (var id in data.get_elements())
+                    {
+                        app_ids += id.get_object().get_string_member("Appname");
+                    }
+                }
+            } catch (Error e) {
+                warning("Houston: %s", e.message);
             }
-         } catch (Error e) {
-            warning("Houston: %s", e.message);
-         }
 
-         Idle.add(get_app_ids.callback);
-      });
+            Idle.add(get_app_ids.callback);
+        });
 
-      yield;
-      return(app_ids);
-   }
+        yield;
+        return(app_ids);
+    }
 
     private static GLib.Once<Houston> instance;
     public static unowned Houston get_default () {
