@@ -26,6 +26,8 @@ public class AppCenter.Widgets.StarButton : Gtk.Grid {
     protected Gtk.Button star_button;
     protected AppCenterCore.Houston houston;
     private Settings settings;
+    private AppCenterCore.StarCache star_cache;
+    private string package_id;
 
     public StarButton (AppCenterCore.Package _package) {
         Object (
@@ -34,21 +36,29 @@ public class AppCenter.Widgets.StarButton : Gtk.Grid {
     }
 
     construct {
-        this.column_spacing = 15;
+        this.hexpand = true;
         houston = AppCenterCore.Houston.get_default ();
         settings = Settings.get_default ();
+        star_cache = AppCenterCore.StarCache.cache;
+        star_button = new Gtk.Button ();
+        
+        if(package.is_snap){
+            package_id = package.get_name ().replace(".snap", "");
+        }
+        else {
+            package_id = package.component.get_id ().replace(".desktop","");
+        }
 
-        star_button = new Gtk.ToggleButton ();
-        star_button.label = _("10");
+        star_button.label = _(star_cache.get_stars_for_app(package_id));
         star_button.image_position = Gtk.PositionType.RIGHT;
         star_button.always_show_image = true;
         star_button.image = new Gtk.Image.from_icon_name ("user-bookmarks-symbolic", Gtk.IconSize.MENU);
         star_button.set_tooltip_text (_("Star this app ..."));
         star_button.clicked.connect (star_package_app);
+        star_button.get_style_context ().add_class (Gtk.STYLE_CLASS_SUGGESTED_ACTION);
 
-        if (package.component.get_id () in settings.stared_apps) {
-            star_button.sensitive = false;
-            star_button.set_tooltip_text (_("Already Stared"));
+        if (package_id in settings.stared_apps) {
+            set_disabled ();
         }
 
         add (star_button);
@@ -62,18 +72,12 @@ public class AppCenter.Widgets.StarButton : Gtk.Grid {
 
     private async void star_package_app () {
         try {
-            if(package.is_snap){
-                var id = package.get_name ().replace(".snap", "");
-                yield houston.star_app_by_name ("/packages/appstar", id);
-                settings.add_stared_app (id);
+            if(this.star_button.sensitive){
+                settings.add_stared_app (package_id);
+                this.star_button.set_label((star_button.label.to_int() + 1).to_string());
+                set_disabled ();
+                yield houston.star_app_by_name ("/packages/appstar", package_id);
             }
-            else {
-                var id = package.component.get_id ().replace(".desktop","");
-                yield houston.star_app_by_name ("/packages/appstar", id);
-                settings.add_stared_app (id);
-            }
-
-            star_button.sensitive = false;
         } catch (Error e) {
             warning(e.message);
         }

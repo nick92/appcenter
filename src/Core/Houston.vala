@@ -17,7 +17,8 @@
 */
 
 public class AppCenterCore.Houston : Object {
-    private const string HOUSTON_API_URL = "https://nick92-appstar.herokuapp.com";
+    //  private const string HOUSTON_API_URL = "https://nick92-appstar.herokuapp.com";
+    private const string HOUSTON_API_URL = "http://localhost:9000";
 
     private Soup.Session session;
 
@@ -42,12 +43,14 @@ public class AppCenterCore.Houston : Object {
         {
             data.append("%c".printf(c));
         }
+
+
         yield;
     }
 
     public async void get_app_stars()
     {
-        var uri = HOUSTON_API_URL + "/packages/get_all_stars";
+        var uri = HOUSTON_API_URL + "/api/get_all_stars";
         var app_list = new Gee.ArrayList<AppStar>();
         var app_cache = StarCache.new_cache ();
 
@@ -66,7 +69,6 @@ public class AppCenterCore.Houston : Object {
                         var stars = id.get_object().get_int_member("stars");
 
                         var app_start = new AppStar(name, stars);
-
                         app_list.add(app_start);
                     }
 
@@ -75,7 +77,7 @@ public class AppCenterCore.Houston : Object {
             } catch (Error e) {
                 warning("Houston: %s", e.message);
             }
-
+            debug ("Stars loaded into cache");
             Idle.add(get_app_stars.callback);
         });
 

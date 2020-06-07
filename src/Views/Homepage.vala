@@ -183,12 +183,20 @@ namespace AppCenter {
         }
 
         private async void load_banners () {
+            string[] categories = {"office","development","multimedia", "games"};
+            //  var categories = Gee.ArrayList<string>();
+            //  categories.add("office");
+            //  categories.add("development");
+            //  categories.add("multimedia");
+            //  categories.add("office");
+            
+            Utils.shuffle_array (categories);
             var houston = AppCenterCore.Houston.get_default ();
             var packages_for_banner = new Gee.LinkedList<AppCenterCore.Package> ();
 
             yield houston.get_app_stars (); 
 
-            var newest_ids = yield houston.get_app_ids ("/packages/useful");
+            var newest_ids = yield houston.get_app_ids ("/api/get_packages?type=useful");
             foreach (var package in newest_ids) {
                 if (packages_for_banner.size >= NUM_PACKAGES_IN_BANNER) {
                     break;
@@ -213,7 +221,7 @@ namespace AppCenter {
             switcher.show_all ();
             switcher_revealer.set_reveal_child (true);
 
-            var updated_ids = yield houston.get_app_ids ("/packages/development");
+            var updated_ids = yield houston.get_app_ids ("/api/get_packages?type="+categories[0]);
             Utils.shuffle_array (updated_ids);
             packages_for_banner = new Gee.LinkedList<AppCenterCore.Package> ();
             foreach (var package in updated_ids) {
@@ -238,7 +246,7 @@ namespace AppCenter {
                 recently_updated_revealer.reveal_child = true;
             }
 
-            var trending_ids = yield houston.get_app_ids ("/packages/office");
+            var trending_ids = yield houston.get_app_ids ("/api/get_popular_packages");
             Utils.shuffle_array (trending_ids);
             packages_for_banner = new Gee.LinkedList<AppCenterCore.Package> ();
             foreach (var package in trending_ids) {

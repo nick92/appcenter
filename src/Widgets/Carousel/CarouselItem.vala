@@ -42,7 +42,17 @@ public class AppCenter.Widgets.CarouselItem : Gtk.FlowBoxChild {
         category_label.xalign = 0;
         category_label.get_style_context ().add_class (Gtk.STYLE_CLASS_DIM_LABEL);
 
-        var stars_label = new Gtk.Label ("10");
+        var package_id = "";
+
+        if(package.is_snap){
+            package_id = package.get_name ().replace(".snap", "");
+        }
+        else {
+            package_id = package.component.get_id ().replace(".desktop","");
+        }
+
+        var star_cache = AppCenterCore.StarCache.cache;
+        var stars_label = new Gtk.Label (star_cache.get_stars_for_app(package_id));
         stars_label.get_style_context ().add_class (Gtk.STYLE_CLASS_DIM_LABEL);
 
         var stars_image = new Gtk.Image.from_icon_name ("user-bookmarks-symbolic", Gtk.IconSize.MENU);
