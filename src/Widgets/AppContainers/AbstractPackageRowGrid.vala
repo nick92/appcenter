@@ -26,7 +26,8 @@ public abstract class AppCenter.Widgets.AbstractPackageRowGrid : AbstractAppCont
         Object (
             package: package,
             show_uninstall: show_uninstall,
-            show_open: false
+            show_open: false,
+            show_star: false
         );
 
         if (action_size_group != null) {

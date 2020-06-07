@@ -42,6 +42,33 @@ public class AppCenter.Widgets.CarouselItem : Gtk.FlowBoxChild {
         category_label.xalign = 0;
         category_label.get_style_context ().add_class (Gtk.STYLE_CLASS_DIM_LABEL);
 
+        var stars_label = new Gtk.Label ("10");
+        stars_label.get_style_context ().add_class (Gtk.STYLE_CLASS_DIM_LABEL);
+
+        var stars_image = new Gtk.Image.from_icon_name ("user-bookmarks-symbolic", Gtk.IconSize.MENU);
+        stars_image.get_style_context ().add_class (Gtk.STYLE_CLASS_DIM_LABEL);
+
+        var box = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 0);
+        box.spacing = 5;
+        box.add(stars_image);
+        box.add (stars_label);
+
+        var package_type_label = new Gtk.Label (_(package.is_snap ? _("Snap") : _("Debian")));
+        package_type_label.get_style_context ().add_class (Gtk.STYLE_CLASS_DIM_LABEL);
+
+        var package_type_image = new Gtk.Image.from_icon_name ("package-x-generic-symbolic", Gtk.IconSize.MENU);
+        package_type_image.get_style_context ().add_class (Gtk.STYLE_CLASS_DIM_LABEL);
+
+        var package_box = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 0);
+        package_box.spacing = 5;
+        package_box.add (package_type_image);
+        package_box.add (package_type_label);
+
+        var footer_box = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 0);
+        footer_box.spacing = 20;
+        footer_box.add (box);
+        footer_box.add (package_box);
+
         var grid = new Gtk.Grid ();
         grid.column_spacing = 12;
         grid.row_spacing = 3;
@@ -49,6 +76,8 @@ public class AppCenter.Widgets.CarouselItem : Gtk.FlowBoxChild {
         grid.attach (icon, 0, 0, 1, 2);
         grid.attach (name_label, 1, 0, 1, 1);
         grid.attach (category_label, 1, 1, 1, 1);
+        grid.attach (footer_box, 1, 2, 1, 1);
+        //  grid.attach (stars_image, 2, 1, 1, 1);
 
         add (grid);
     }
