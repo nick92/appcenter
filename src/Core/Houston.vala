@@ -49,7 +49,7 @@ public class AppCenterCore.Houston : Object {
 
     public async void get_app_stars()
     {
-        var uri = HOUSTON_API_URL + "/api/get_all_stars";
+        var uri = HOUSTON_API_URL + "/packages/get_all_stars";
         var app_list = new Gee.ArrayList<AppStar>();
         var app_cache = StarCache.new_cache ();
 

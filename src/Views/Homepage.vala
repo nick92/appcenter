@@ -196,7 +196,7 @@ namespace AppCenter {
 
             yield houston.get_app_stars (); 
 
-            var newest_ids = yield houston.get_app_ids ("/api/get_packages?type=useful");
+            var newest_ids = yield houston.get_app_ids ("/packages/get_packages?type=useful");
             foreach (var package in newest_ids) {
                 if (packages_for_banner.size >= NUM_PACKAGES_IN_BANNER) {
                     break;
@@ -221,7 +221,7 @@ namespace AppCenter {
             switcher.show_all ();
             switcher_revealer.set_reveal_child (true);
 
-            var updated_ids = yield houston.get_app_ids ("/api/get_packages?type="+categories[0]);
+            var updated_ids = yield houston.get_app_ids ("/packages/get_packages?type="+categories[0]);
             Utils.shuffle_array (updated_ids);
             packages_for_banner = new Gee.LinkedList<AppCenterCore.Package> ();
             foreach (var package in updated_ids) {
@@ -246,7 +246,7 @@ namespace AppCenter {
                 recently_updated_revealer.reveal_child = true;
             }
 
-            var trending_ids = yield houston.get_app_ids ("/api/get_popular_packages");
+            var trending_ids = yield houston.get_app_ids ("/packages/get_popular_packages");
             Utils.shuffle_array (trending_ids);
             packages_for_banner = new Gee.LinkedList<AppCenterCore.Package> ();
             foreach (var package in trending_ids) {
